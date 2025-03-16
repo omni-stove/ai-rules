@@ -1,0 +1,36 @@
+{
+  "name": "ai-rules",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "homepage": "https://github.com/codynog/ai-rules#readme",
+  "bugs": {
+    "url": "https://github.com/codynog/ai-rules/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codynog/ai-rules.git"
+  },
+  "bin": {
+    "@codynog/ai-rules": "./index.js"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "cli": "node index.js --output dist",
+    "cli:local": "node index.js --mode local",
+    "setup": "cp -n .env.example .env && npm install && npm run cli:local",
+    "lint": "cspell ."
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.1.1",
+    "adm-zip": "^0.5.16",
+    "dotenv": "^16.4.7",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "cspell": "^8.17.5"
+  }
+}

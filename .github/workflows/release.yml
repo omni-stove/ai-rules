@@ -1,0 +1,96 @@
+name: Package Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'index.js'
+      - '.github/**'
+  workflow_dispatch:
+
+jobs:
+  build-tag-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+
+      - name: Configure npm authentication
+        run: |
+          echo "@codynog:registry=https://npm.pkg.github.com" > ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+
+      - name: Generate CalVer
+        id: calver
+        run: |
+          year=$(date +'%Y')
+          month=$(date +'%-m')
+          
+          current_date="${year}.${month}"
+          echo "Current date: ${current_date}"
+          
+          release_count=$(git tag | grep "^v${current_date}\." | wc -l)
+          echo "Release count: ${release_count}"
+          
+          next_release=$((release_count + 1))
+          echo "Next release: ${next_release}"
+          
+          version="${current_date}.${next_release}"
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${version}"
+
+      - name: Update package.json
+        run: |
+          # Update package name to @codynog/ai-rules
+          jq '.name = "@codynog/ai-rules"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          
+          # Update version
+          if jq -e '.version' package.json > /dev/null 2>&1; then
+            # Update existing version
+            jq --arg version "${{ steps.calver.outputs.version }}" '.version = $version' package.json > package.json.tmp
+          else
+            # Add version field if it doesn't exist
+            jq --arg version "${{ steps.calver.outputs.version }}" '. + {version: $version}' package.json > package.json.tmp
+          fi
+          mv package.json.tmp package.json
+          
+          # Remove private flag (to publish to GitHub Packages)
+          jq 'del(.private)' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          
+          cat package.json
+
+      - name: Publish package
+        run: |
+          if ! npm publish --no-git-checks; then
+            echo "Failed to publish package"
+            exit 1
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_REGISTRY: "https://npm.pkg.github.com"
+
+      - name: Create and push Git tag
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          if ! git tag -a v${{ steps.calver.outputs.version }} -m "Release ${{ steps.calver.outputs.version }}"; then
+            echo "Failed to create tag"
+            exit 1
+          fi
+          
+          if ! git push origin v${{ steps.calver.outputs.version }}; then
+            echo "Failed to push tag"
+            exit 1
+          fi

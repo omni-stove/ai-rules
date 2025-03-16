@@ -1,0 +1,23 @@
+name: check-changes
+description: 'Check if files in specified paths have been changed and skip if no changes'
+outputs:
+  src:
+    description: 'True if source files were changed'
+    value: ${{ steps.filter.outputs.src }}
+runs:
+  using: composite
+  steps:
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          src:
+            - 'src/**'
+            - 'index.js'
+            - '.github/**'
+    - name: Skip check
+      if: steps.filter.outputs.src == 'false'
+      shell: bash
+      run: |
+        echo "No relevant changes found. Skipping checks."
+        exit 0
