@@ -217,7 +217,6 @@ async function main() {
     try {
       indexMdContent = await fs.promises.readFile(indexMdPath, 'utf8');
       console.log(`✅ Loaded src/index.md`);
-      console.log(`📄 Content of src/index.md:\n${indexMdContent}`);
     } catch (error) {
       console.error(`❌ Failed to load src/index.md: ${error.message}`);
       process.exit(1);

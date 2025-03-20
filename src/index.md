@@ -12,6 +12,12 @@
 
 ## specific
 
+### Git
+
+- Never perform force pushes or any operations that rewrite history
+- Do not use destructive commands like git reset --hard
+- Do not delete remote branches
+
 ### TypeScript
 
 - Use TypeScript
