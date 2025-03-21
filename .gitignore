@@ -15,7 +15,7 @@ Thumbs.db
 ai-docs/**
 .clinerules
 .cursorrules
-ai-rules-version.json
+.ai-rules-version.json
 
 # 出力ファイル
 dist/

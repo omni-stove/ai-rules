@@ -10,7 +10,7 @@ require('dotenv').config();
 // GitHub repository information
 const OWNER = 'codynog';
 const REPO = 'ai-rules';
-const VERSION_FILE = 'ai-rules-version.json';
+const VERSION_FILE = '.ai-rules-version.json';
 
 // Initialize Octokit client
 const octokit = new Octokit({
@@ -215,8 +215,7 @@ async function main() {
     let indexMdContent;
     
     try {
-      indexMdContent = await fs.promises.readFile(indexMdPath, 'utf8');
-      console.log(`✅ Loaded src/index.md`);
+  indexMdContent = await fs.promises.readFile(indexMdPath, 'utf8');
     } catch (error) {
       console.error(`❌ Failed to load src/index.md: ${error.message}`);
       process.exit(1);
@@ -224,9 +223,8 @@ async function main() {
     
     // Write the content of src/index.md to .clinerules and .cursorrules
     // Specify encoding to preserve the content as is
-    await fs.promises.writeFile(path.join(outputPath, '.clinerules'), indexMdContent, 'utf8');
-    await fs.promises.writeFile(path.join(outputPath, '.cursorrules'), indexMdContent, 'utf8');
-    console.log('✅ Created .clinerules and .cursorrules files');
+await fs.promises.writeFile(path.join(outputPath, '.clinerules'), indexMdContent, 'utf8');
+await fs.promises.writeFile(path.join(outputPath, '.cursorrules'), indexMdContent, 'utf8');
     
     // Copy directories from src directory to output destination
     const srcEntries = await fs.promises.readdir(srcPath, { withFileTypes: true });
@@ -237,9 +235,8 @@ async function main() {
         const srcDirPath = path.join(srcPath, entry.name);
         const destDirPath = path.join(outputPath, entry.name);
         
-        // Copy directory
-        await copyDirectory(srcDirPath, destDirPath);
-        console.log(`✅ Copied directory: ${entry.name}`);
+    // Copy directory
+    await copyDirectory(srcDirPath, destDirPath);
       }
     }
     

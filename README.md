@@ -65,7 +65,7 @@ Add the following to .gitignore
 ai-docs/**
 .cursorrules
 .clinerules
-ai-rules-version.json
+.ai-rules-version.json
 ```
 
 ### Node.js Version
