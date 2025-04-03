@@ -8,6 +8,6 @@
 
 ## Git
 
-- Never perform force pushes or any operations that rewrite history
-- Do not use destructive commands like git reset --hard
-- Do not delete remote branches
+- Perform only history-preserving operations.
+- Use only non-destructive commands.
+- Keep remote branches.
