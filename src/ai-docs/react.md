@@ -1,6 +1,6 @@
-# React
+## React
 
-## General Best Practices
+### General Best Practices
 
 - Use functional components
 - Use React Hooks for state management and side effects

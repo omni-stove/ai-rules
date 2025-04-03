@@ -1,6 +1,6 @@
-# nextjs
+## nextjs
 
-## General Best Practices
+### General Best Practices
 
 - use App Router
 - use React Server Components
