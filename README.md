@@ -62,10 +62,10 @@ If you don't need to adjust the script itself, you can simply edit the documents
 Add the following to .gitignore
 
 ```plaintext
-ai-docs/**
-.cursorrules
 .clinerules
+.cursorrules
 .ai-rules-version.json
+.github/copilot-instructions.md
 ```
 
 ### Node.js Version

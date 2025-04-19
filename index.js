@@ -131,6 +131,37 @@ async function updateVersionFile(outputPath, version) {
   }
 }
 
+// --- Helper function to write rules content to multiple files ---
+async function writeRulesToFiles(outputPath, rulesContent) {
+    const copilotInstructionsDir = path.join(outputPath, '.github');
+    // Define all target files relative to outputPath
+    const targetFiles = [
+        path.join(outputPath, '.clinerules'),
+        path.join(outputPath, '.cursorrules'),
+        path.join(copilotInstructionsDir, 'copilot-instructions.md')
+    ];
+
+    try {
+        // Ensure the .github directory exists before attempting to write into it
+        await fs.promises.mkdir(copilotInstructionsDir, { recursive: true });
+
+        // Write content to all target files concurrently
+        await Promise.all(
+            targetFiles.map(filePath => fs.promises.writeFile(filePath, rulesContent, 'utf8'))
+        );
+
+        // Log success message listing the files relative to the output path
+        const writtenFiles = targetFiles.map(p => path.relative(outputPath, p)).join(', ');
+        console.log(`✅ Created/Updated ${writtenFiles} in ${outputPath}`);
+    } catch (error) {
+        // Log a detailed error message if writing fails
+        console.error(`❌ Failed to write rules content to one or more files: ${error.message}`);
+        // Optionally re-throw if the main function needs to handle the error further
+        // throw error;
+        console.warn(`⚠️ Some rules files might not have been written correctly.`);
+    }
+}
+
 // Main function
 async function main() {
   try {
@@ -164,6 +195,8 @@ async function main() {
     const latestVersion = await getLatestVersion();
 
     let srcPath = path.join(baseDir, 'src');
+    let extractPath = null; // Declare extractPath higher up
+    let repoDir = null; // Declare repoDir higher up
 
     // If we're not in local mode, handle version management
     if (!isLocalMode) {
@@ -172,65 +205,47 @@ async function main() {
         if (currentVersion !== latestVersion) {
           console.log(`🔄 Version mismatch: current=${currentVersion || 'none'}, latest=${latestVersion}`);
 
-          const extractPath = await downloadLatestRules(latestVersion, baseDir);
+          extractPath = await downloadLatestRules(latestVersion, baseDir); // Assign to higher-scoped variable
           if (extractPath) {
             // Find the src directory in the extracted files
             const extractedDirs = await fs.promises.readdir(extractPath, { withFileTypes: true });
-            const repoDir = extractedDirs.find(dir => dir.isDirectory());
+            repoDir = extractedDirs.find(dir => dir.isDirectory()); // Assign to higher-scoped variable
 
             if (repoDir) {
               srcPath = path.join(extractPath, repoDir.name, 'src');
               console.log(`✅ Using rules from downloaded version: ${latestVersion}`);
             } else {
               console.error('❌ Could not find repository directory in extracted files');
-              // Fallback to local src if extraction failed to find the dir
-              srcPath = path.join(baseDir, 'src');
-              console.warn('⚠️ Falling back to local src directory.');
             }
-          } else {
-             // Fallback to local src if download failed
-             srcPath = path.join(baseDir, 'src');
-             console.warn('⚠️ Download failed. Falling back to local src directory.');
           }
         } else {
           console.log(`✅ Already using the latest version: ${currentVersion}`);
-          // Ensure srcPath points to local src if using current version
-          srcPath = path.join(baseDir, 'src');
         }
 
-        // Always update the version file in default mode if a latest version was determined
+        // Always update the version file in default mode to ensure it exists
         await updateVersionFile(outputPath, latestVersion);
       } else {
         console.log('⚠️ Could not determine latest version, using local files');
-        // Ensure srcPath points to local src if latest version check failed
-        srcPath = path.join(baseDir, 'src');
       }
     } else {
       console.log('ℹ️ Using local mode, skipping version check');
-      // Ensure srcPath points to local src in local mode
-      srcPath = path.join(baseDir, 'src');
     }
 
     // Load src/index.md
     const indexMdPath = path.join(srcPath, 'index.md');
     let baseRulesContent = ''; // Initialize with empty string
     try {
-      // Check if srcPath and indexMdPath exist before reading
-      if (fs.existsSync(srcPath) && fs.existsSync(indexMdPath)) {
-          baseRulesContent = await fs.promises.readFile(indexMdPath, 'utf8');
-          console.log(`✅ Loaded base rules from ${indexMdPath}`);
-      } else {
-          console.warn(`⚠️ Base rules file not found at ${indexMdPath}. Continuing without base rules.`);
-      }
+      baseRulesContent = await fs.promises.readFile(indexMdPath, 'utf8');
+      console.log(`✅ Loaded base rules from src/index.md`);
     } catch (error) {
-      // If index.md doesn't exist or other error, log a warning but continue
-      console.warn(`⚠️ Failed to load base rules from ${indexMdPath}: ${error.message}. Continuing without base rules.`);
+      // If index.md doesn't exist, log a warning but continue
+      console.warn(`⚠️ Failed to load base rules from src/index.md: ${error.message}. Continuing without base rules.`);
     }
 
     // --- Load ai-docs ---
     let aiDocsContent = '';
     const aiDocsPath = path.join(srcPath, 'ai-docs');
-    const configFilePath = path.join(outputPath, 'ai-rules-config.json');
+    const configFilePath = path.join(outputPath, '.ai-rules-config.json');
     let docsToLoad = [];
 
     try {
@@ -242,7 +257,7 @@ async function main() {
           docsToLoad = config.docs.map(docName => `${docName}.md`); // Add .md extension
           console.log(`⚙️ Using docs specified in config: ${docsToLoad.join(', ')}`);
         } else {
-          console.log(`⚙️ Config file found, but "docs" array is missing or invalid. Loading all available docs from ${aiDocsPath}.`);
+          console.log(`⚙️ Config file found, but "docs" array is missing or invalid. Loading all docs.`);
           // Check if aiDocsPath exists before reading
           if (fs.existsSync(aiDocsPath)) {
              docsToLoad = (await fs.promises.readdir(aiDocsPath)).filter(file => file.endsWith('.md'));
@@ -252,7 +267,7 @@ async function main() {
           }
         }
       } else {
-        console.log(`⚙️ Config file not found at ${configFilePath}. Loading all available docs from ${aiDocsPath}.`);
+        console.log(`⚙️ Config file not found at ${configFilePath}. Loading all docs.`);
         // Load all .md files if config doesn't exist or doesn't specify docs
         // Check if aiDocsPath exists before reading
         if (fs.existsSync(aiDocsPath)) {
@@ -280,7 +295,7 @@ async function main() {
               aiDocsContents.push(content);
               console.log(`✅ Loaded ai-doc: ${docFile}`);
             } else {
-              console.warn(`⚠️ Specified ai-doc not found: ${docFile} at ${docPath}`);
+              console.warn(`⚠️ Specified ai-doc not found: ${docFile}`);
             }
           } catch (error) {
             console.warn(`⚠️ Failed to load ai-doc ${docFile}: ${error.message}`);
@@ -294,7 +309,7 @@ async function main() {
 
     // --- Load local-ai-rules ---
     let localRulesContent = '';
-    const localRulesPath = path.join(outputPath, 'local-ai-rules'); // Look in output path
+    const localRulesPath = path.join(outputPath, 'local-ai-rules');
     try {
       if (fs.existsSync(localRulesPath)) {
         const localFiles = (await fs.promises.readdir(localRulesPath)).filter(file => file.endsWith('.md'));
@@ -302,14 +317,9 @@ async function main() {
         for (const localFile of localFiles) {
           const localFilePath = path.join(localRulesPath, localFile);
           try {
-            // Check if file exists before reading
-            if (fs.existsSync(localFilePath)) {
-                const content = await fs.promises.readFile(localFilePath, 'utf8');
-                localContents.push(content);
-                console.log(`✅ Loaded local rule: ${localFile}`);
-            } else {
-                console.warn(`⚠️ Local rule file not found: ${localFile} at ${localFilePath}`);
-            }
+            const content = await fs.promises.readFile(localFilePath, 'utf8');
+            localContents.push(content);
+            console.log(`✅ Loaded local rule: ${localFile}`);
           } catch (error) {
             console.warn(`⚠️ Failed to load local rule ${localFile}: ${error.message}`);
           }
@@ -330,47 +340,36 @@ async function main() {
       localRulesContent
     ].filter(content => content && content.trim()).join('\n\n'); // Join non-empty parts with double newline
 
-    // Write the merged content to .clinerules and .cursorrules
-    await fs.promises.writeFile(path.join(outputPath, '.clinerules'), finalRules, 'utf8');
-    await fs.promises.writeFile(path.join(outputPath, '.cursorrules'), finalRules, 'utf8');
-    console.log('✅ Created merged .clinerules and .cursorrules files');
+    // --- Write finalRules to all target files using the helper function ---
+    await writeRulesToFiles(outputPath, finalRules);
+    // --- End Write ---
 
     // --- Copy other directories ---
     // Copy directories from the source *other than* index.md and ai-docs
-    // Ensure srcPath exists before trying to read from it
-    if (fs.existsSync(srcPath)) {
-        const srcEntries = await fs.promises.readdir(srcPath, { withFileTypes: true });
+    const srcEntries = await fs.promises.readdir(srcPath, { withFileTypes: true });
 
-        for (const entry of srcEntries) {
-          // Skip files/dirs handled above or potentially problematic ones
-          if (entry.name === 'index.md' || entry.name === 'ai-docs') {
-              continue;
+    for (const entry of srcEntries) {
+      // Skip files/dirs handled above or potentially problematic ones
+      if (entry.name === 'index.md' || entry.name === 'ai-docs') {
+          continue;
+      }
+
+      const srcEntryPath = path.join(srcPath, entry.name);
+      const destEntryPath = path.join(outputPath, entry.name);
+
+      try {
+          if (entry.isDirectory()) {
+              // Copy directory recursively
+              await copyDirectory(srcEntryPath, destEntryPath);
+              console.log(`✅ Copied directory: ${entry.name}`);
+          } else if (entry.isFile()) {
+              // Optionally copy other top-level files if needed
+              // await fs.promises.copyFile(srcEntryPath, destEntryPath);
+              // console.log(`✅ Copied file: ${entry.name}`);
           }
-
-          const srcEntryPath = path.join(srcPath, entry.name);
-          const destEntryPath = path.join(outputPath, entry.name);
-
-          try {
-              // Check if source entry exists before copying
-              if (fs.existsSync(srcEntryPath)) {
-                  if (entry.isDirectory()) {
-                      // Copy directory recursively
-                      await copyDirectory(srcEntryPath, destEntryPath);
-                      console.log(`✅ Copied directory: ${entry.name}`);
-                  } else if (entry.isFile()) {
-                      // Optionally copy other top-level files if needed
-                      // await fs.promises.copyFile(srcEntryPath, destEntryPath);
-                      // console.log(`✅ Copied file: ${entry.name}`);
-                  }
-              } else {
-                  console.warn(`⚠️ Source entry not found, skipping copy: ${srcEntryPath}`);
-              }
-          } catch (copyError) {
-              console.warn(`⚠️ Failed to copy ${entry.isDirectory() ? 'directory' : 'file'} ${entry.name}: ${copyError.message}`);
-          }
-        }
-    } else {
-        console.warn(`⚠️ Source directory not found, skipping copy of other directories: ${srcPath}`);
+      } catch (copyError) {
+          console.warn(`⚠️ Failed to copy ${entry.isDirectory() ? 'directory' : 'file'} ${entry.name}: ${copyError.message}`);
+      }
     }
 
 
@@ -386,7 +385,7 @@ async function main() {
 
 // Function to recursively copy a directory
 async function copyDirectory(src, dest) {
-  // Create output directory if it doesn't exist
+  // Create output directory
   await fs.promises.mkdir(dest, { recursive: true });
 
   // Get contents of source directory
@@ -396,17 +395,12 @@ async function copyDirectory(src, dest) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
-    // Check if source path exists before proceeding
-    if (fs.existsSync(srcPath)) {
-        if (entry.isDirectory()) {
-          // If it's a directory, copy recursively
-          await copyDirectory(srcPath, destPath);
-        } else {
-          // If it's a file, copy it
-          await fs.promises.copyFile(srcPath, destPath);
-        }
+    if (entry.isDirectory()) {
+      // If it's a directory, copy recursively
+      await copyDirectory(srcPath, destPath);
     } else {
-        console.warn(`⚠️ Source path not found during copy, skipping: ${srcPath}`);
+      // If it's a file, copy it
+      await fs.promises.copyFile(srcPath, destPath);
     }
   }
 }

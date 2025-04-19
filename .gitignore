@@ -12,10 +12,10 @@ yarn-error.log
 Thumbs.db
 
 # 生成ファイル
-ai-docs/**
 .clinerules
 .cursorrules
 .ai-rules-version.json
+.github/copilot-instructions.md
 
 # 出力ファイル
 dist/
