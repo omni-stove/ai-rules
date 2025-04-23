@@ -1,6 +1,12 @@
-## React
+---
+description: rules
+globs: 
+alwaysApply: false
+---
 
-### General Best Practices
+# React
+
+## General Best Practices
 
 - Use functional components
 - Use React Hooks for state management and side effects

@@ -7,7 +7,9 @@
     "clinerules",
     "cursorrules",
     "clineignore",
-    "cursorignore"
+    "cursorignore",
+    "hono",
+    "nextjs"
   ],
   "ignoreWords": [],
   "ignorePaths": [

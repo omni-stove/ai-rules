@@ -1,4 +1,10 @@
-## TypeScript
+---
+description: rules
+globs: 
+alwaysApply: false
+---
+
+# TypeScript
 
 - Use TypeScript
 - Use `type` instead of `interface`

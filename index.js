@@ -9,6 +9,9 @@ require('dotenv').config();
 const OWNER = 'codynog';
 const REPO = 'ai-rules';
 const VERSION_FILE = '.ai-rules-version.json'; // Removed dot prefix
+const CURSOR_RULES_DIR = '.cursor/rules'; // Constant for Cursor rules
+const ROO_RULES_DIR = '.roo/rules'; // Constant for Roo rules
+const CLINE_RULES_DIR = '.clinerules'; // Constant for Cline rules directory
 
 // Octokit and fetch will be imported dynamically
 let octokit;
@@ -131,36 +134,137 @@ async function updateVersionFile(outputPath, version) {
   }
 }
 
-// --- Helper function to write rules content to multiple files ---
-async function writeRulesToFiles(outputPath, rulesContent) {
+
+// --- Helper function to write merged rules content ONLY to copilot-instructions.md ---
+async function writeCopilotInstructionsFile(outputPath, rulesContent) {
     const copilotInstructionsDir = path.join(outputPath, '.github');
-    // Define all target files relative to outputPath
-    const targetFiles = [
-        path.join(outputPath, '.clinerules'),
-        path.join(outputPath, '.cursorrules'),
-        path.join(copilotInstructionsDir, 'copilot-instructions.md')
-    ];
+    const targetFile = path.join(copilotInstructionsDir, 'copilot-instructions.md');
 
     try {
-        // Ensure the .github directory exists before attempting to write into it
+        // Ensure the .github directory exists
         await fs.promises.mkdir(copilotInstructionsDir, { recursive: true });
 
-        // Write content to all target files concurrently
-        await Promise.all(
-            targetFiles.map(filePath => fs.promises.writeFile(filePath, rulesContent, 'utf8'))
-        );
+        // Write content to the target file
+        await fs.promises.writeFile(targetFile, rulesContent, 'utf8');
 
-        // Log success message listing the files relative to the output path
-        const writtenFiles = targetFiles.map(p => path.relative(outputPath, p)).join(', ');
-        console.log(`✅ Created/Updated ${writtenFiles} in ${outputPath}`);
+        console.log(`✅ Created/Updated ${path.relative(outputPath, targetFile)} in ${outputPath}`);
     } catch (error) {
-        // Log a detailed error message if writing fails
-        console.error(`❌ Failed to write rules content to one or more files: ${error.message}`);
-        // Optionally re-throw if the main function needs to handle the error further
-        // throw error;
-        console.warn(`⚠️ Some rules files might not have been written correctly.`);
+        console.error(`❌ Failed to write copilot-instructions.md: ${error.message}`);
     }
 }
+
+
+// --- Helper function to process and write individual MDC rules (for Cursor) ---
+async function processAndWriteMdcFiles(srcDir, destCursorDir) {
+    try {
+        if (!fs.existsSync(srcDir)) {
+            console.warn(`⚠️ Source directory for MDC processing not found: ${srcDir}`);
+            return;
+        }
+
+        await fs.promises.mkdir(destCursorDir, { recursive: true });
+        const entries = await fs.promises.readdir(srcDir, { withFileTypes: true });
+
+        for (const entry of entries) {
+            const srcPath = path.join(srcDir, entry.name);
+            // Output path for .mdc file in .cursor/rules/
+            const destMdcPath = path.join(destCursorDir, entry.name.replace(/\.md$/, '.mdc'));
+
+            if (entry.isDirectory()) {
+                // Recursively process subdirectories (like ai-docs)
+                await processAndWriteMdcFiles(srcPath, destMdcPath); // Pass the corresponding dest dir
+            } else if (entry.isFile() && entry.name.endsWith('.md')) {
+                try {
+                    const content = await fs.promises.readFile(srcPath, 'utf8');
+                    // Basic metadata generation (can be improved)
+                    const description = entry.name.replace('.md', '').replace(/-/g, ' ');
+                    const metadata = `---
+description: Rule for ${description}
+alwaysApply: false
+---
+
+`;
+                    const mdcContent = metadata + content;
+                    await fs.promises.writeFile(destMdcPath, mdcContent, 'utf8');
+                    console.log(`✅ Processed and wrote Cursor rule: ${path.relative(process.cwd(), destMdcPath)}`);
+                } catch (fileError) {
+                    console.warn(`⚠️ Failed to process or write MDC file ${entry.name}: ${fileError.message}`);
+                }
+            }
+        }
+    } catch (error) {
+        console.error(`❌ Error processing directory ${srcDir} for Cursor rules: ${error.message}`);
+    }
+}
+
+
+// --- Helper function to copy rule files to the Roo directory ---
+async function copyRulesToRooDir(srcDir, destRooDir) {
+    try {
+        if (!fs.existsSync(srcDir)) {
+            console.warn(`⚠️ Source directory for MDC processing not found: ${srcDir}`);
+            return;
+        }
+
+        await fs.promises.mkdir(destRooDir, { recursive: true });
+        const entries = await fs.promises.readdir(srcDir, { withFileTypes: true });
+
+        for (const entry of entries) {
+            const srcPath = path.join(srcDir, entry.name);
+            const destPath = path.join(destRooDir, entry.name); // Keep original name
+
+            if (entry.isDirectory()) {
+                // Recursively copy subdirectories (like ai-docs)
+                await copyRulesToRooDir(srcPath, destPath);
+            } else if (entry.isFile() && entry.name.endsWith('.md')) { // Copy only .md files
+                try {
+                    await fs.promises.copyFile(srcPath, destPath);
+                    console.log(`✅ Copied to Roo rules: ${path.relative(process.cwd(), destPath)}`);
+                } catch (fileError) {
+                    console.warn(`⚠️ Failed to copy rule file ${entry.name} to Roo dir: ${fileError.message}`);
+                }
+            }
+        }
+    } catch (error) {
+        console.error(`❌ Error copying rules to ${destRooDir}: ${error.message}`);
+    }
+}
+
+
+// --- Helper function to write rule content to the Cline directory ---
+async function writeRulesToClineDir(srcDir, destClineDir) {
+    try {
+        if (!fs.existsSync(srcDir)) {
+            console.warn(`⚠️ Source directory for Cline rules write not found: ${srcDir}`);
+            return;
+        }
+
+        await fs.promises.mkdir(destClineDir, { recursive: true });
+        const entries = await fs.promises.readdir(srcDir, { withFileTypes: true });
+
+        for (const entry of entries) {
+            const srcPath = path.join(srcDir, entry.name);
+            const destPath = path.join(destClineDir, entry.name); // Keep original name (.md)
+
+            if (entry.isDirectory()) {
+                // Recursively write content from subdirectories (like ai-docs)
+                await writeRulesToClineDir(srcPath, destPath);
+            } else if (entry.isFile() && entry.name.endsWith('.md')) { // Process only .md files
+                try {
+                    const content = await fs.promises.readFile(srcPath, 'utf8');
+                    // Write the plain content (no metadata added or removed here)
+                    await fs.promises.writeFile(destPath, content, 'utf8');
+                    console.log(`✅ Wrote Cline rule: ${path.relative(process.cwd(), destPath)}`);
+                } catch (fileError) {
+                    console.warn(`⚠️ Failed to write rule file ${entry.name} to Cline dir: ${fileError.message}`);
+                }
+            }
+        }
+    } catch (error) {
+        console.error(`❌ Error writing rules to ${destClineDir}: ${error.message}`);
+    }
+}
+
 
 // Main function
 async function main() {
@@ -231,120 +335,141 @@ async function main() {
       console.log('ℹ️ Using local mode, skipping version check');
     }
 
-    // Load src/index.md
-    const indexMdPath = path.join(srcPath, 'index.md');
-    let baseRulesContent = ''; // Initialize with empty string
-    try {
-      baseRulesContent = await fs.promises.readFile(indexMdPath, 'utf8');
-      console.log(`✅ Loaded base rules from src/index.md`);
-    } catch (error) {
-      // If index.md doesn't exist, log a warning but continue
-      console.warn(`⚠️ Failed to load base rules from src/index.md: ${error.message}. Continuing without base rules.`);
+    // --- Generate Cursor rules (.cursor/rules/*.mdc) ---
+    const cursorRulesDestPath = path.join(outputPath, CURSOR_RULES_DIR);
+    await processAndWriteMdcFiles(srcPath, cursorRulesDestPath); // Process main src (index.md etc.)
+    const localRulesSrcPathForCursor = path.join(outputPath, 'local-ai-rules'); // Source for local rules
+    await processAndWriteMdcFiles(localRulesSrcPathForCursor, cursorRulesDestPath); // Process local rules
+
+    // --- Generate Roo rules (.roo/rules/*.md) ---
+    const rooRulesDestPath = path.join(outputPath, ROO_RULES_DIR);
+    await copyRulesToRooDir(srcPath, rooRulesDestPath); // Copy main src (index.md etc.)
+    const localRulesSrcPathForRoo = path.join(outputPath, 'local-ai-rules'); // Source for local rules
+    await copyRulesToRooDir(localRulesSrcPathForRoo, rooRulesDestPath); // Copy local rules
+
+    // --- Generate Cline rules (.clinerules/*.md) ---
+    const clineRulesDestPath = path.join(outputPath, CLINE_RULES_DIR);
+    await writeRulesToClineDir(srcPath, clineRulesDestPath); // Write main src content
+    const localRulesSrcPathForCline = path.join(outputPath, 'local-ai-rules'); // Source for local rules
+    await writeRulesToClineDir(localRulesSrcPathForCline, clineRulesDestPath); // Write local rules content
+
+
+    // --- Load content from ORIGINAL source .md files for copilot-instructions.md ---
+    // Read directly from the source paths (.md only).
+
+    let allRuleContentsForMerging = []; // Store contents for copilot-instructions.md
+
+    // Helper to read original .md file content
+    async function readOriginalRuleContent(filePath) {
+        let content = '';
+        try {
+            // Ensure we are reading the .md file, not potentially generated .mdc
+            const mdFilePath = filePath.endsWith('.md') ? filePath : `${filePath}.md`;
+            if (fs.existsSync(mdFilePath)) {
+                content = await fs.promises.readFile(mdFilePath, 'utf8');
+                console.log(`✅ Loaded for merging: ${path.relative(process.cwd(), mdFilePath)}`);
+                return content;
+            } else {
+                 console.warn(`⚠️ Original rule file not found for merging: ${mdFilePath}`);
+                 return null; // Indicate file not found
+            }
+        } catch (error) {
+            console.warn(`⚠️ Failed to load original rule content from ${filePath}: ${error.message}`);
+            return null; // Indicate error
+        }
     }
 
-    // --- Load ai-docs ---
-    let aiDocsContent = '';
+    // Load base rule (src/index.md)
+    const baseRuleContent = await readOriginalRuleContent(path.join(srcPath, 'index.md'));
+    if (baseRuleContent !== null) {
+        allRuleContentsForMerging.push(baseRuleContent);
+    }
+
+
+    // Load ai-docs rules (src/ai-docs/*.md)
     const aiDocsPath = path.join(srcPath, 'ai-docs');
     const configFilePath = path.join(outputPath, '.ai-rules-config.json');
-    let docsToLoad = [];
+    let docsToLoadNames = []; // Store just the base names (e.g., 'react')
 
     try {
-      // Check for config file
-      if (fs.existsSync(configFilePath)) {
-        const configContent = await fs.promises.readFile(configFilePath, 'utf8');
-        const config = JSON.parse(configContent);
-        if (config && Array.isArray(config.docs)) {
-          docsToLoad = config.docs.map(docName => `${docName}.md`); // Add .md extension
-          console.log(`⚙️ Using docs specified in config: ${docsToLoad.join(', ')}`);
+        // Determine which ai-docs to load (similar logic as before, but only .md)
+        if (fs.existsSync(configFilePath)) {
+            const configContent = await fs.promises.readFile(configFilePath, 'utf8');
+            const config = JSON.parse(configContent);
+            if (config && Array.isArray(config.docs)) {
+                docsToLoadNames = config.docs; // Use base names from config
+                console.log(`⚙️ Using docs specified in config: ${docsToLoadNames.join(', ')}`);
+            } else {
+                 console.log(`⚙️ Config file found, but "docs" array is missing or invalid. Loading all docs.`);
+                 if (fs.existsSync(aiDocsPath)) {
+                    docsToLoadNames = (await fs.promises.readdir(aiDocsPath))
+                        .filter(file => file.endsWith('.md'))
+                        .map(file => file.replace(/\.md$/, '')); // Get base names
+                 } else {
+                    console.warn(`⚠️ ai-docs directory not found at ${aiDocsPath}. Cannot load all docs.`);
+                 }
+            }
         } else {
-          console.log(`⚙️ Config file found, but "docs" array is missing or invalid. Loading all docs.`);
-          // Check if aiDocsPath exists before reading
-          if (fs.existsSync(aiDocsPath)) {
-             docsToLoad = (await fs.promises.readdir(aiDocsPath)).filter(file => file.endsWith('.md'));
-          } else {
-             console.warn(`⚠️ ai-docs directory not found at ${aiDocsPath}. Cannot load all docs.`);
-             docsToLoad = [];
-          }
+             console.log(`⚙️ Config file not found at ${configFilePath}. Loading all docs.`);
+             if (fs.existsSync(aiDocsPath)) {
+                 docsToLoadNames = (await fs.promises.readdir(aiDocsPath))
+                     .filter(file => file.endsWith('.md'))
+                     .map(file => file.replace(/\.md$/, '')); // Get base names
+             } else {
+                 console.warn(`⚠️ ai-docs directory not found at ${aiDocsPath}. Cannot load all docs.`);
+             }
         }
-      } else {
-        console.log(`⚙️ Config file not found at ${configFilePath}. Loading all docs.`);
-        // Load all .md files if config doesn't exist or doesn't specify docs
-        // Check if aiDocsPath exists before reading
-        if (fs.existsSync(aiDocsPath)) {
-           docsToLoad = (await fs.promises.readdir(aiDocsPath)).filter(file => file.endsWith('.md'));
-        } else {
-           console.warn(`⚠️ ai-docs directory not found at ${aiDocsPath}. Cannot load all docs.`);
-           docsToLoad = [];
-        }
-      }
     } catch (error) {
-      console.warn(`⚠️ Error reading config file or ai-docs directory: ${error.message}. Skipping ai-docs.`);
-      docsToLoad = []; // Reset docsToLoad on error
+        console.warn(`⚠️ Error reading config file or ai-docs directory: ${error.message}. Skipping ai-docs.`);
     }
 
     // Read content of selected ai-docs files
-    const aiDocsContents = [];
-    // Ensure aiDocsPath exists before trying to read files from it
     if (fs.existsSync(aiDocsPath)) {
-        for (const docFile of docsToLoad) {
-          const docPath = path.join(aiDocsPath, docFile);
-          try {
-            // Check if the specific doc file exists before reading
-            if (fs.existsSync(docPath)) {
-              const content = await fs.promises.readFile(docPath, 'utf8');
-              aiDocsContents.push(content);
-              console.log(`✅ Loaded ai-doc: ${docFile}`);
-            } else {
-              console.warn(`⚠️ Specified ai-doc not found: ${docFile}`);
+        for (const docName of docsToLoadNames) {
+            const content = await readOriginalRuleContent(path.join(aiDocsPath, `${docName}.md`)); // Read original .md
+             if (content !== null) {
+                allRuleContentsForMerging.push(content);
             }
-          } catch (error) {
-            console.warn(`⚠️ Failed to load ai-doc ${docFile}: ${error.message}`);
-          }
         }
-    } else if (docsToLoad.length > 0) {
-        // Warn if docs were specified but the directory doesn't exist
-        console.warn(`⚠️ ai-docs directory not found at ${aiDocsPath}, but specific docs were requested.`);
+    } else if (docsToLoadNames.length > 0) {
+         console.warn(`⚠️ ai-docs directory not found at ${aiDocsPath}, but specific docs were requested.`);
     }
-    aiDocsContent = aiDocsContents.join('\n\n'); // Join with double newline for separation
 
-    // --- Load local-ai-rules ---
-    let localRulesContent = '';
-    const localRulesPath = path.join(outputPath, 'local-ai-rules');
+
+    // Load local-ai-rules (local-ai-rules/*.md from output path)
+    const localRulesReadPath = path.join(outputPath, 'local-ai-rules'); // Read from output path
     try {
-      if (fs.existsSync(localRulesPath)) {
-        const localFiles = (await fs.promises.readdir(localRulesPath)).filter(file => file.endsWith('.md'));
-        const localContents = [];
-        for (const localFile of localFiles) {
-          const localFilePath = path.join(localRulesPath, localFile);
-          try {
-            const content = await fs.promises.readFile(localFilePath, 'utf8');
-            localContents.push(content);
-            console.log(`✅ Loaded local rule: ${localFile}`);
-          } catch (error) {
-            console.warn(`⚠️ Failed to load local rule ${localFile}: ${error.message}`);
-          }
+        if (fs.existsSync(localRulesReadPath)) {
+            const localFileNames = (await fs.promises.readdir(localRulesReadPath))
+                .filter(file => file.endsWith('.md'))
+                .map(file => file.replace(/\.md$/, '')); // Get base names
+
+            for (const localName of localFileNames) {
+                 // Read the original .md file from the local rules source directory
+                 const content = await readOriginalRuleContent(path.join(localRulesReadPath, `${localName}.md`));
+                 if (content !== null) {
+                    allRuleContentsForMerging.push(content);
+                }
+            }
+            console.log(`✅ Loaded local rules from ${localRulesReadPath} for merging`);
+        } else {
+            console.log(`ℹ️ No local-ai-rules directory found at ${localRulesReadPath}. Skipping local rules for merging.`);
         }
-        localRulesContent = localContents.join('\n\n'); // Join with double newline
-        console.log(`✅ Loaded local rules from ${localRulesPath}`);
-      } else {
-        console.log(`ℹ️ No local-ai-rules directory found at ${localRulesPath}. Skipping local rules.`);
-      }
     } catch (error) {
-      console.warn(`⚠️ Error reading local-ai-rules directory: ${error.message}. Skipping local rules.`);
+        console.warn(`⚠️ Error reading local-ai-rules directory for merging: ${error.message}. Skipping local rules.`);
     }
 
-    // --- Merge all rules ---
-    const finalRules = [
-      baseRulesContent,
-      aiDocsContent,
-      localRulesContent
-    ].filter(content => content && content.trim()).join('\n\n'); // Join non-empty parts with double newline
 
-    // --- Write finalRules to all target files using the helper function ---
-    await writeRulesToFiles(outputPath, finalRules);
-    // --- End Write ---
+    // --- Merge rules for copilot-instructions.md ---
+    const finalMergedRules = allRuleContentsForMerging
+        .filter(content => content && content.trim()) // Ensure content is not empty/whitespace
+        .join('\n\n'); // Join non-empty parts with double newline
 
-    // --- Copy other directories ---
+    // --- Write the merged rules ONLY to copilot-instructions.md ---
+    await writeCopilotInstructionsFile(outputPath, finalMergedRules);
+
+
+    // --- Copy other directories (Keep this logic) ---
     // Copy directories from the source *other than* index.md and ai-docs
     const srcEntries = await fs.promises.readdir(srcPath, { withFileTypes: true });
 

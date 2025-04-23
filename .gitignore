@@ -16,6 +16,8 @@ Thumbs.db
 .cursorrules
 .ai-rules-version.json
 .github/copilot-instructions.md
+.roo
+.cursor
 
 # 出力ファイル
 dist/

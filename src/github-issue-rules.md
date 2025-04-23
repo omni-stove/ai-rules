@@ -1,8 +1,14 @@
-## GitHub Issue Creation Workflow for Agent Tasks
+---
+description: rules
+globs: 
+alwaysApply: false
+---
+
+# GitHub Issue Creation Workflow for Agent Tasks
 
 This document outlines the recommended workflow for creating and managing GitHub Issues intended for AI agents like Devin, leveraging Cline, MCP Server, and GitHub Actions for efficient task management and dependency tracking within this repository.
 
-### 1. Planning and Task Decomposition (with Cline)
+## 1. Planning and Task Decomposition (with Cline)
 
 Before creating individual issues, it's crucial to plan the overall feature or task and break it down into smaller, manageable sub-tasks.
 
@@ -24,7 +30,7 @@ Before creating individual issues, it's crucial to plan the overall feature or t
     *(List each dependency on a new line. Omit if none.)*
     ```
 
-### 2. Automated Issue Creation (via Cline & MCP Server)
+## 2. Automated Issue Creation (via Cline & MCP Server)
 
 Manually creating issues for each decomposed task is tedious. Utilize Cline and the GitHub MCP Server to automate this process.
 
@@ -52,7 +58,7 @@ Manually creating issues for each decomposed task is tedious. Utilize Cline and 
     - Add relevant labels (e.g., `bug`, `enhancement`, `refactoring`, `documentation`).
     - **`devin` label:** Apply this label **only** if the original task in the Markdown file had **no** `Depends on:` lines (i.e., it's a starting point).
 
-### 3. Workflow Automation (GitHub Actions)
+## 3. Workflow Automation (GitHub Actions)
 
 Once issues are created with the correct dependencies and initial `devin` labels:
 
@@ -62,7 +68,7 @@ Once issues are created with the correct dependencies and initial `devin` labels
   - If other dependencies remain, it removes the closed dependency line from the issue body.
   - If it was the *last* dependency, it adds the `devin` label to the now-unblocked issue, triggering the next Devin task via the `Devin Task Automation` workflow (likely using `repository_dispatch`).
 
-### 4. Other Link Types
+## 4. Other Link Types
 
 - Use `Related to #<issue_number>` for general relations.
 - Use `Blocks #<issue_number>` if an issue prevents another from starting (distinct from `Depends on:` which implies a required completion order).

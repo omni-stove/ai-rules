@@ -1,3 +1,9 @@
+---
+description: rules
+globs: 
+alwaysApply: true
+---
+
 # rules
 
 ## general
