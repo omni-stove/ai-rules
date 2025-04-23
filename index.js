@@ -469,33 +469,7 @@ async function main() {
     await writeCopilotInstructionsFile(outputPath, finalMergedRules);
 
 
-    // --- Copy other directories (Keep this logic) ---
-    // Copy directories from the source *other than* index.md and ai-docs
-    const srcEntries = await fs.promises.readdir(srcPath, { withFileTypes: true });
-
-    for (const entry of srcEntries) {
-      // Skip files/dirs handled above or potentially problematic ones
-      if (entry.name === 'index.md' || entry.name === 'ai-docs') {
-          continue;
-      }
-
-      const srcEntryPath = path.join(srcPath, entry.name);
-      const destEntryPath = path.join(outputPath, entry.name);
-
-      try {
-          if (entry.isDirectory()) {
-              // Copy directory recursively
-              await copyDirectory(srcEntryPath, destEntryPath);
-              console.log(`✅ Copied directory: ${entry.name}`);
-          } else if (entry.isFile()) {
-              // Optionally copy other top-level files if needed
-              // await fs.promises.copyFile(srcEntryPath, destEntryPath);
-              // console.log(`✅ Copied file: ${entry.name}`);
-          }
-      } catch (copyError) {
-          console.warn(`⚠️ Failed to copy ${entry.isDirectory() ? 'directory' : 'file'} ${entry.name}: ${copyError.message}`);
-      }
-    }
+    // --- (Removed unnecessary directory copying logic) ---
 
 
     console.log('✨ Processing completed!');
