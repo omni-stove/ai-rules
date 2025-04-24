@@ -9,7 +9,8 @@
     "clineignore",
     "cursorignore",
     "hono",
-    "nextjs"
+    "nextjs",
+    "roomodes"
   ],
   "ignoreWords": [],
   "ignorePaths": [

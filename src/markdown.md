@@ -15,14 +15,14 @@ This document outlines specific rules and preferences for writing Markdown in th
 ## Headings
 
 - Use a single top-level heading (`#`) per document.
-- Increment heading levels sequentially (e.g., `#` -> `##` -> `###`). Do not skip levels.
+- Increment heading levels sequentially (e.g., `#` -> `##` -> `###`). Never skip levels.
 
 ## Lists
 
 - Use hyphens (`-`) for unordered lists.
 - Ensure exactly one space follows the list marker (e.g., `- item`, not `-   item`).
 - Indent list items consistently (use 2 or 4 spaces, be consistent within the document).
-- Do not use bold formatting for the beginning of list items as pseudo-headings. If hierarchy is needed within a list item, consider using nested lists or restructuring.
+- Never use bold formatting for the beginning of list items as pseudo-headings. If hierarchy is needed within a list item, consider using nested lists or restructuring.
 
 ## Code Blocks
 

@@ -18,6 +18,7 @@ Thumbs.db
 .github/copilot-instructions.md
 .roo
 .cursor
+.roomodes
 
 # 出力ファイル
 dist/
