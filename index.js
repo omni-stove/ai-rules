@@ -507,12 +507,6 @@ async function generateRooModes(srcPath, outputPath) {
 		if (modeDirEntry.isDirectory()) {
 			const modeSlug = modeDirEntry.name;
 
-			// Check if the mode is Roo-specific (contains 'roo')
-			if (!modeSlug.includes("roo")) {
-				console.log(`  - Skipping non-Roo mode: ${modeSlug}`);
-				continue; // Skip to the next directory if not Roo-related
-			}
-
 			const modeDirPath = path.join(modesSrcDir, modeSlug); // Path within determined srcPath
 			const indexJsonPath = path.join(modeDirPath, "index.json");
 			const targetRooRulesDir = path.join(

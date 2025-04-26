@@ -30,17 +30,18 @@ module.exports = (plop) => {
 		actions: [
 			{
 				type: "add",
-				path: "src/modes/rules-{{dashCase slug}}/index.json",
+				path: "src/modes/{{dashCase slug}}/index.json", // Removed 'rules-' prefix
 				templateFile: "plop-templates/mode/index.json.hbs",
 			},
 			{
 				type: "add",
-				path: "src/modes/rules-{{dashCase slug}}/instructions.md",
+				path: "src/modes/{{dashCase slug}}/instructions.md", // Removed 'rules-' prefix
 				templateFile: "plop-templates/mode/instructions.md.hbs",
 			},
 			// Optional: Add a message indicating success
 			(data) => {
-				return `Mode '${data.name}' (${data.slug}) generated successfully in src/modes/rules-${plop.getHelper("dashCase")(data.slug)}/`;
+				// Removed 'rules-' prefix from success message path
+				return `Mode '${data.name}' (${data.slug}) generated successfully in src/modes/${plop.getHelper("dashCase")(data.slug)}/`;
 			},
 		],
 	});
