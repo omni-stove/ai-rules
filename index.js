@@ -137,6 +137,14 @@ async function processAndWriteMdcFiles(srcDir, destCursorDir) {
 	const entries = await fs.readdir(srcDir, { withFileTypes: true });
 
 	for (const entry of entries) {
+		// Skip the 'modes' directory
+		if (entry.isDirectory() && entry.name === "modes") {
+			console.log(
+				`ℹ️ Skipping 'modes' directory during Cursor rule processing in: ${srcDir}`,
+			);
+			continue;
+		}
+
 		const srcPath = path.join(srcDir, entry.name);
 		// Output path for .mdc file in .cursor/rules/
 		const destMdcPath = path.join(
@@ -205,6 +213,14 @@ async function writeRulesToClineDir(srcDir, destClineDir) {
 	const entries = await fs.readdir(srcDir, { withFileTypes: true });
 
 	for (const entry of entries) {
+		// Skip the 'modes' directory
+		if (entry.isDirectory() && entry.name === "modes") {
+			console.log(
+				`ℹ️ Skipping 'modes' directory during Cline rule processing in: ${srcDir}`,
+			);
+			continue;
+		}
+
 		const srcPath = path.join(srcDir, entry.name);
 		const destPath = path.join(destClineDir, entry.name);
 
@@ -490,6 +506,13 @@ async function generateRooModes(srcPath, outputPath) {
 	for (const modeDirEntry of modeDirs) {
 		if (modeDirEntry.isDirectory()) {
 			const modeSlug = modeDirEntry.name;
+
+			// Check if the mode is Roo-specific (contains 'roo')
+			if (!modeSlug.includes("roo")) {
+				console.log(`  - Skipping non-Roo mode: ${modeSlug}`);
+				continue; // Skip to the next directory if not Roo-related
+			}
+
 			const modeDirPath = path.join(modesSrcDir, modeSlug); // Path within determined srcPath
 			const indexJsonPath = path.join(modeDirPath, "index.json");
 			const targetRooRulesDir = path.join(
