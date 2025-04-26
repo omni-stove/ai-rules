@@ -23,8 +23,7 @@
 		"cli:local": "node index.js --mode local",
 		"setup": "cp -n .env.example .env && npm install && npm run cli:local",
 		"lint": "cspell .",
-		"format": "biome check --write .",
-		"plop": "plop"
+		"format": "biome check --write ."
 	},
 	"dependencies": {
 		"@octokit/rest": "^21.1.1",
@@ -35,7 +34,6 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"cspell": "^8.17.5",
-		"plop": "^4.0.1"
+		"cspell": "^8.17.5"
 	}
 }

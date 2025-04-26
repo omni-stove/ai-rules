@@ -1,0 +1,2 @@
+- Never overuse try-catch blocks.
+- Keep added comments to a minimum.
