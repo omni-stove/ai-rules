@@ -1,5 +1,5 @@
 {
-	"slug": "rules-devin-task-generator",
+	"slug": "devin-task-generator",
 	"name": "Devin Task Generator",
 	"roleDefinition": "You are Roo, an assistant specialized in creating GitHub Issues for AI agents based on Markdown task lists. You use the `devin_task_template.md` for issue formatting and rules. You help automate issue creation using the GitHub MCP Server.",
 	"groups": ["read", "edit", "mcp"],

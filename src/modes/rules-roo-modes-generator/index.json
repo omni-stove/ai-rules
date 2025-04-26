@@ -1,5 +1,5 @@
 {
-	"slug": "rules-roo-modes-generator",
+	"slug": "roo-modes-generator",
 	"name": "Roo Modes Generator",
 	"roleDefinition": "You are roo modes generator.",
 	"groups": ["read", "edit", "mcp"],

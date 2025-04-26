@@ -1,22 +1,17 @@
 {
-  "version": "0.2",
-  "language": "en",
-  "words": [
-    "codynog",
-    "zipball",
-    "clinerules",
-    "cursorrules",
-    "clineignore",
-    "cursorignore",
-    "hono",
-    "nextjs",
-    "roomodes"
-  ],
-  "ignoreWords": [],
-  "ignorePaths": [
-    "dist",
-    "node_modules",
-    "*.zip",
-    ".gitignore",
-  ]
+	"version": "0.2",
+	"language": "en",
+	"words": [
+		"codynog",
+		"zipball",
+		"clinerules",
+		"cursorrules",
+		"clineignore",
+		"cursorignore",
+		"hono",
+		"nextjs",
+		"roomodes"
+	],
+	"ignoreWords": [],
+	"ignorePaths": ["dist", "node_modules", "*.zip", ".gitignore"]
 }
