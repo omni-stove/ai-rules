@@ -185,6 +185,18 @@ async function copyRulesToRooDir(srcDir, destRooDir) {
 	const entries = await fs.readdir(srcDir, { withFileTypes: true });
 
 	for (const entry of entries) {
+		// srcDir 直下の 'modes' ディレクトリはスキップ
+		if (
+			entry.isDirectory() &&
+			entry.name === "modes" &&
+			path.basename(srcDir) === "src"
+		) {
+			console.log(
+				`ℹ️ Skipping 'modes' directory during Roo rule copying in: ${srcDir}`,
+			);
+			continue;
+		}
+
 		const srcPath = path.join(srcDir, entry.name);
 		const destPath = path.join(destRooDir, entry.name);
 
