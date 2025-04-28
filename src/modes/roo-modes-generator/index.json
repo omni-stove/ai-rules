@@ -2,6 +2,6 @@
 	"slug": "roo-modes-generator",
 	"name": "Roo Modes Generator",
 	"roleDefinition": "You are roo modes generator.",
-	"groups": ["read", "edit", "mcp"],
+	"groups": ["read", "edit", "mcp", "command"],
 	"customInstructions": "Can create Roo modes based on information from the official Roo code documentation."
 }

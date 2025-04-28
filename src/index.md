@@ -18,3 +18,7 @@ alwaysApply: true
 - Perform only history-preserving operations.
 - Use only non-destructive commands.
 - Keep remote branches.
+
+## coding
+
+- Use comments sparingly.

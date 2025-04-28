@@ -466,7 +466,7 @@ async function main() {
 }
 
 // --- Helper function to copy files recursively (from generate-modes.js) ---
-const ROO_RULES_DIR_BASE = ".roo/rules";
+// const ROO_RULES_DIR_BASE = ".roo/rules"; // この定数は使わないようにする
 
 /**
  * Copies a file from source to destination, creating directories if needed.
@@ -498,7 +498,19 @@ async function generateRooModes(srcPath, outputPath) {
 	const allModeDefinitions = [];
 	const instructionFilesToCopy = [];
 
-	await fs.stat(modesSrcDir);
+	// Check if modes source directory exists before proceeding
+	try {
+		await fs.stat(modesSrcDir);
+	} catch (error) {
+		if (error.code === "ENOENT") {
+			console.warn(
+				`⚠️ Modes source directory not found: ${modesSrcDir}. Skipping Roo mode generation.`,
+			);
+			return; // Exit the function if the directory doesn't exist
+		}
+		// Re-throw other errors
+		throw error;
+	}
 
 	// Read all entries in the modes source directory
 	const modeDirs = await fs.readdir(modesSrcDir, { withFileTypes: true });
@@ -511,11 +523,14 @@ async function generateRooModes(srcPath, outputPath) {
 			const indexJsonPath = path.join(modeDirPath, "index.json");
 			const targetRooRulesDir = path.join(
 				outputPath,
-				ROO_RULES_DIR_BASE,
-				modeSlug,
-			); // e.g., <output>/.roo/rules/docs-writer
+				".roo", // ベースは .roo
+				`rules-${modeSlug}`, // ディレクトリ名を rules-<modeSlug> に
+			);
 
 			console.log(`\nProcessing mode: ${modeSlug}`);
+			console.log(
+				`  - Target Roo rules directory: ${path.relative(outputPath, targetRooRulesDir)}`,
+			); // パスをログに出力
 
 			// 1. Read index.json for mode definition
 			try {
@@ -542,7 +557,8 @@ async function generateRooModes(srcPath, outputPath) {
 				} else {
 					console.error(`❌ Error processing ${indexJsonPath}:`, error);
 				}
-				continue; // Skip to the next mode directory if index.json is missing or invalid
+				// Continue processing instructions even if index.json is missing/invalid
+				// continue; // ここをコメントアウト or 削除
 			}
 
 			// 2. Find instruction files (non-index.json files)
@@ -553,7 +569,7 @@ async function generateRooModes(srcPath, outputPath) {
 			for (const item of modeDirContents) {
 				if (item.isFile() && item.name !== "index.json") {
 					const srcFilePath = path.join(modeDirPath, item.name);
-					const destFilePath = path.join(targetRooRulesDir, item.name);
+					const destFilePath = path.join(targetRooRulesDir, item.name); // targetRooRulesDir を使う
 					instructionFilesToCopy.push({ src: srcFilePath, dest: destFilePath });
 					foundInstructions = true;
 				}
@@ -572,21 +588,27 @@ async function generateRooModes(srcPath, outputPath) {
 	};
 	const roomodesOutputPath = path.join(outputPath, ".roomodes");
 
-	// 4. Write .roomodes file
-	await fs.writeFile(
-		roomodesOutputPath,
-		JSON.stringify(finalRoomodesContent, null, 2),
-		"utf8",
-	);
-	console.log(
-		`\n✅ Successfully wrote ${path.relative(process.cwd(), roomodesOutputPath)}`,
-	);
+	// 4. Write .roomodes file (only if modes were found)
+	if (allModeDefinitions.length > 0 || instructionFilesToCopy.length > 0) {
+		await fs.writeFile(
+			roomodesOutputPath,
+			JSON.stringify(finalRoomodesContent, null, 2),
+			"utf8",
+		);
+		console.log(
+			`\n✅ Successfully wrote ${path.relative(process.cwd(), roomodesOutputPath)}`,
+		);
+	} else {
+		console.log(
+			"\nℹ️ No modes found or processed, skipping .roomodes file generation.",
+		);
+	}
 
 	// 5. Copy all instruction files
 	if (instructionFilesToCopy.length > 0) {
 		console.log("\n🔄 Copying instruction files...");
 		// Ensure the base .roo directory exists (copyFiles ensures specific rule dir)
-		await fs.mkdir(path.join(outputPath, ".roo"), { recursive: true });
+		// await fs.mkdir(path.join(outputPath, ".roo"), { recursive: true }); // copyFiles内で作成されるので不要かも
 
 		for (const fileInfo of instructionFilesToCopy) {
 			await copyFiles(fileInfo.src, fileInfo.dest);
