@@ -1,2 +1,6 @@
+- Follow readable code principles
 - Never overuse try-catch blocks.
-- Keep added comments to a minimum.
+- When deleting code, remove it directly without commenting it out
+- Write JSDoc comments
+- Keep argument types as simple as possible
+- Fix lint errors at the end of implementation
