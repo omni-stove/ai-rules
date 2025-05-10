@@ -166,15 +166,64 @@ alwaysApply: false
 
 `;
 			const mdcContent = metadata + content;
+			// Always overwrite for the base processing
 			await fs.writeFile(destMdcPath, mdcContent, "utf8");
 			console.log(
-				`✅ Processed and wrote Cursor rule: ${path.relative(process.cwd(), destMdcPath)}`,
+				`✅ Processed and wrote Cursor rule (overwrite): ${path.relative(process.cwd(), destMdcPath)}`,
 			);
 		}
 	}
 }
 
-// --- Helper function to copy rule files to the Roo directory ---
+// --- Helper function to APPEND MDC rules from local-ai-rules ---
+async function processAndAppendMdcFiles(localRulesSrcDir, destCursorDir) {
+	if (!nodeFs.existsSync(localRulesSrcDir)) {
+		console.log(
+			`ℹ️ No local-ai-rules directory found at ${localRulesSrcDir}. Skipping append for Cursor.`,
+		);
+		return;
+	}
+	const entries = await fs.readdir(localRulesSrcDir, { withFileTypes: true });
+	for (const entry of entries) {
+		const srcPath = path.join(localRulesSrcDir, entry.name);
+		const destMdcPath = path.join(
+			destCursorDir,
+			entry.name.replace(/\.md$/, ".mdc"),
+		);
+
+		if (entry.isFile() && entry.name.endsWith(".md")) {
+			const content = await fs.readFile(srcPath, "utf8");
+			const description = entry.name.replace(".md", "").replace(/-/g, " ");
+			const metadata = `---
+description: Rule for ${description} (local)
+alwaysApply: false
+---
+
+`;
+			const mdcContentToAppend = metadata + content;
+
+			if (nodeFs.existsSync(destMdcPath)) {
+				const existingContent = await fs.readFile(destMdcPath, "utf8");
+				const finalContent =
+					existingContent +
+					(existingContent.endsWith("\n") ? "" : "\n\n") +
+					mdcContentToAppend;
+				await fs.writeFile(destMdcPath, finalContent, "utf8");
+				console.log(
+					`✅ Appended local rule to Cursor MDC: ${path.relative(process.cwd(), destMdcPath)}`,
+				);
+			} else {
+				// If target doesn't exist (e.g. local-only rule), create it
+				await fs.writeFile(destMdcPath, mdcContentToAppend, "utf8");
+				console.log(
+					`✅ Wrote local rule to new Cursor MDC: ${path.relative(process.cwd(), destMdcPath)}`,
+				);
+			}
+		}
+	}
+}
+
+// --- Helper function to copy rule files to the Roo directory (Overwrite) ---
 async function copyRulesToRooDir(srcDir, destRooDir) {
 	if (!nodeFs.existsSync(srcDir)) {
 		console.warn(`⚠️ Source directory for Roo processing not found: ${srcDir}`);
@@ -189,7 +238,7 @@ async function copyRulesToRooDir(srcDir, destRooDir) {
 		if (
 			entry.isDirectory() &&
 			entry.name === "modes" &&
-			path.basename(srcDir) === "src"
+			path.basename(srcDir) === "src" // Only skip 'modes' at the top level of srcPath
 		) {
 			console.log(
 				`ℹ️ Skipping 'modes' directory during Roo rule copying in: ${srcDir}`,
@@ -201,18 +250,53 @@ async function copyRulesToRooDir(srcDir, destRooDir) {
 		const destPath = path.join(destRooDir, entry.name);
 
 		if (entry.isDirectory()) {
-			// Recursively copy subdirectories (like ai-docs)
+			// Recursively copy subdirectories
 			await copyRulesToRooDir(srcPath, destPath);
 		} else if (entry.isFile() && entry.name.endsWith(".md")) {
-			await fs.copyFile(srcPath, destPath);
+			await fs.copyFile(srcPath, destPath); // Always overwrite
 			console.log(
-				`✅ Copied to Roo rules: ${path.relative(process.cwd(), destPath)}`,
+				`✅ Copied to Roo rules (overwrite): ${path.relative(process.cwd(), destPath)}`,
 			);
 		}
 	}
 }
 
-// --- Helper function to write rule content to the Cline directory ---
+// --- Helper function to APPEND rule files from local-ai-rules to the Roo directory ---
+async function appendRulesToRooDir(localRulesSrcDir, destRooDir) {
+	if (!nodeFs.existsSync(localRulesSrcDir)) {
+		console.log(
+			`ℹ️ No local-ai-rules directory found at ${localRulesSrcDir}. Skipping append for Roo.`,
+		);
+		return;
+	}
+
+	const entries = await fs.readdir(localRulesSrcDir, { withFileTypes: true });
+
+	for (const entry of entries) {
+		const srcPath = path.join(localRulesSrcDir, entry.name);
+		const destPath = path.join(destRooDir, entry.name);
+
+		if (entry.isFile() && entry.name.endsWith(".md")) {
+			if (nodeFs.existsSync(destPath)) {
+				const existingContent = await fs.readFile(destPath, "utf8");
+				const newContent = await fs.readFile(srcPath, "utf8");
+				const contentToAppend =
+					(existingContent.endsWith("\n") ? "" : "\n\n") + newContent;
+				await fs.writeFile(destPath, existingContent + contentToAppend, "utf8");
+				console.log(
+					`✅ Appended local rule to Roo: ${path.relative(process.cwd(), destPath)}`,
+				);
+			} else {
+				await fs.copyFile(srcPath, destPath);
+				console.log(
+					`✅ Copied local rule to new Roo file: ${path.relative(process.cwd(), destPath)}`,
+				);
+			}
+		}
+	}
+}
+
+// --- Helper function to write rule content to the Cline directory (Overwrite) ---
 async function writeRulesToClineDir(srcDir, destClineDir) {
 	if (!nodeFs.existsSync(srcDir)) {
 		console.warn(
@@ -237,15 +321,47 @@ async function writeRulesToClineDir(srcDir, destClineDir) {
 		const destPath = path.join(destClineDir, entry.name);
 
 		if (entry.isDirectory()) {
-			// Recursively write content from subdirectories (like ai-docs)
 			await writeRulesToClineDir(srcPath, destPath);
 		} else if (entry.isFile() && entry.name.endsWith(".md")) {
 			const content = await fs.readFile(srcPath, "utf8");
-			// Write the plain content (no metadata added or removed here)
-			await fs.writeFile(destPath, content, "utf8");
+			await fs.writeFile(destPath, content, "utf8"); // Always overwrite
 			console.log(
-				`✅ Wrote Cline rule: ${path.relative(process.cwd(), destPath)}`,
+				`✅ Wrote Cline rule (overwrite): ${path.relative(process.cwd(), destPath)}`,
 			);
+		}
+	}
+}
+
+// --- Helper function to APPEND rule content from local-ai-rules to the Cline directory ---
+async function appendRulesToClineDir(localRulesSrcDir, destClineDir) {
+	if (!nodeFs.existsSync(localRulesSrcDir)) {
+		console.log(
+			`ℹ️ No local-ai-rules directory found at ${localRulesSrcDir}. Skipping append for Cline.`,
+		);
+		return;
+	}
+	const entries = await fs.readdir(localRulesSrcDir, { withFileTypes: true });
+	for (const entry of entries) {
+		const srcPath = path.join(localRulesSrcDir, entry.name);
+		const destPath = path.join(destClineDir, entry.name);
+
+		if (entry.isFile() && entry.name.endsWith(".md")) {
+			if (nodeFs.existsSync(destPath)) {
+				const existingContent = await fs.readFile(destPath, "utf8");
+				const newContent = await fs.readFile(srcPath, "utf8");
+				const contentToAppend =
+					(existingContent.endsWith("\n") ? "" : "\n\n") + newContent;
+				await fs.writeFile(destPath, existingContent + contentToAppend, "utf8");
+				console.log(
+					`✅ Appended local rule to Cline: ${path.relative(process.cwd(), destPath)}`,
+				);
+			} else {
+				const content = await fs.readFile(srcPath, "utf8");
+				await fs.writeFile(destPath, content, "utf8");
+				console.log(
+					`✅ Wrote local rule to new Cline file: ${path.relative(process.cwd(), destPath)}`,
+				);
+			}
 		}
 	}
 }
@@ -334,24 +450,24 @@ async function main() {
 
 	// --- Generate Cursor rules (.cursor/rules/*.mdc) ---
 	const cursorRulesDestPath = path.join(outputPath, CURSOR_RULES_DIR);
-	await processAndWriteMdcFiles(srcPath, cursorRulesDestPath);
+	await processAndWriteMdcFiles(srcPath, cursorRulesDestPath); // Overwrite with base rules
 	const localRulesSrcPathForCursor = path.join(outputPath, "local-ai-rules");
-	await processAndWriteMdcFiles(
+	await processAndAppendMdcFiles(
 		localRulesSrcPathForCursor,
 		cursorRulesDestPath,
-	);
+	); // Append local rules
 
 	// --- Generate Roo rules (.roo/rules/*.md) ---
 	const rooRulesDestPath = path.join(outputPath, ROO_RULES_DIR);
-	await copyRulesToRooDir(srcPath, rooRulesDestPath);
+	await copyRulesToRooDir(srcPath, rooRulesDestPath); // Overwrite with base rules
 	const localRulesSrcPathForRoo = path.join(outputPath, "local-ai-rules");
-	await copyRulesToRooDir(localRulesSrcPathForRoo, rooRulesDestPath);
+	await appendRulesToRooDir(localRulesSrcPathForRoo, rooRulesDestPath); // Append local rules
 
 	// --- Generate Cline rules (.clinerules/*.md) ---
 	const clineRulesDestPath = path.join(outputPath, CLINE_RULES_DIR);
-	await writeRulesToClineDir(srcPath, clineRulesDestPath);
+	await writeRulesToClineDir(srcPath, clineRulesDestPath); // Overwrite with base rules
 	const localRulesSrcPathForCline = path.join(outputPath, "local-ai-rules");
-	await writeRulesToClineDir(localRulesSrcPathForCline, clineRulesDestPath);
+	await appendRulesToClineDir(localRulesSrcPathForCline, clineRulesDestPath); // Append local rules
 
 	// --- Load content from ORIGINAL source .md files for copilot-instructions.md ---
 	// Read directly from the source paths (.md only).
