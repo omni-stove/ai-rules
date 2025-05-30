@@ -13,6 +13,9 @@ const VERSION_FILE = ".ai-rules-version.json";
 const CURSOR_RULES_DIR = ".cursor/rules";
 const ROO_RULES_DIR = ".roo/rules";
 const CLINE_RULES_DIR = ".clinerules";
+const CLAUDE_RULES_DIR = ".claude/rules";
+const CLAUDE_LOCAL_DIR = ".claude/local";
+const CLAUDE_PROJECT_MEMORY = "CLAUDE.md";
 
 // Octokit and fetch will be imported dynamically
 let octokit;
@@ -366,6 +369,142 @@ async function appendRulesToClineDir(localRulesSrcDir, destClineDir) {
 	}
 }
 
+// --- Helper function to copy rule files to the Claude rules directory (Overwrite) ---
+async function copyRulesToClaudeRulesDir(srcDir, destClaudeRulesDir) {
+	if (!nodeFs.existsSync(srcDir)) {
+		console.warn(
+			`⚠️ Source directory for Claude rules processing not found: ${srcDir}`,
+		);
+		return;
+	}
+
+	await fs.mkdir(destClaudeRulesDir, { recursive: true });
+	const entries = await fs.readdir(srcDir, { withFileTypes: true });
+
+	for (const entry of entries) {
+		// Skip the 'modes' directory
+		if (entry.isDirectory() && entry.name === "modes") {
+			console.log(
+				`ℹ️ Skipping 'modes' directory during Claude rule processing in: ${srcDir}`,
+			);
+			continue;
+		}
+
+		const srcPath = path.join(srcDir, entry.name);
+		const destPath = path.join(destClaudeRulesDir, entry.name);
+
+		if (entry.isDirectory()) {
+			// Recursively copy subdirectories
+			await copyRulesToClaudeRulesDir(srcPath, destPath);
+		} else if (entry.isFile() && entry.name.endsWith(".md")) {
+			await fs.copyFile(srcPath, destPath); // Always overwrite
+			console.log(
+				`✅ Copied to Claude rules (overwrite): ${path.relative(process.cwd(), destPath)}`,
+			);
+		}
+	}
+}
+
+// --- Helper function to copy local rule files to the Claude local directory ---
+async function copyLocalRulesToClaudeLocalDir(
+	localRulesSrcDir,
+	destClaudeLocalDir,
+) {
+	if (!nodeFs.existsSync(localRulesSrcDir)) {
+		console.log(
+			`ℹ️ No local-ai-rules directory found at ${localRulesSrcDir}. Skipping Claude local rules.`,
+		);
+		return;
+	}
+
+	await fs.mkdir(destClaudeLocalDir, { recursive: true });
+	const entries = await fs.readdir(localRulesSrcDir, { withFileTypes: true });
+
+	for (const entry of entries) {
+		const srcPath = path.join(localRulesSrcDir, entry.name);
+		const destPath = path.join(destClaudeLocalDir, entry.name);
+
+		if (entry.isFile() && entry.name.endsWith(".md")) {
+			await fs.copyFile(srcPath, destPath);
+			console.log(
+				`✅ Copied local rule to Claude local: ${path.relative(process.cwd(), destPath)}`,
+			);
+		}
+	}
+}
+
+// --- Helper function to write Claude example memory file ---
+async function writeClaudeExampleMemory(outputPath, srcPath, localRulesPath) {
+	const claudeExamplePath = path.join(
+		outputPath,
+		".claude",
+		"CLAUDE.example.md",
+	);
+
+	// Generate example content with instructions
+	const contentLines = [];
+
+	// Add header and instructions
+	contentLines.push("# Claude Code Memory Example");
+	contentLines.push("");
+	contentLines.push(
+		"Copy this file to your project root as `CLAUDE.md` and customize as needed.",
+	);
+	contentLines.push("Uncomment the rules you want to use for your project.");
+	contentLines.push("");
+
+	// Add base rule import (always loaded)
+	contentLines.push("# AI Rules for this project");
+	contentLines.push("");
+	contentLines.push("See @.claude/rules/index.md for base rules.");
+	contentLines.push("");
+
+	// Add technology-specific rule imports
+	if (nodeFs.existsSync(srcPath)) {
+		const srcEntries = await fs.readdir(srcPath, { withFileTypes: true });
+		const techRules = srcEntries
+			.filter(
+				(entry) =>
+					entry.isFile() &&
+					entry.name.endsWith(".md") &&
+					entry.name !== "index.md",
+			)
+			.map((entry) => entry.name);
+
+		if (techRules.length > 0) {
+			contentLines.push("# Technology-specific rules (uncomment as needed)");
+			for (const techRule of techRules) {
+				contentLines.push(`# @.claude/rules/${techRule}`);
+			}
+			contentLines.push("");
+		}
+	}
+
+	// Add local rule imports
+	if (nodeFs.existsSync(localRulesPath)) {
+		const localEntries = await fs.readdir(localRulesPath, {
+			withFileTypes: true,
+		});
+		const localRules = localEntries
+			.filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+			.map((entry) => entry.name);
+
+		if (localRules.length > 0) {
+			contentLines.push("# Local project rules (uncomment as needed)");
+			for (const localRule of localRules) {
+				contentLines.push(`# @.claude/local/${localRule}`);
+			}
+		}
+	}
+
+	const finalContent = contentLines.join("\n");
+	await fs.writeFile(claudeExamplePath, finalContent, "utf8");
+
+	console.log(
+		`✅ Created Claude example memory: ${path.relative(process.cwd(), claudeExamplePath)}`,
+	);
+}
+
 // Main function
 async function main() {
 	// Initialize required modules first
@@ -468,6 +607,22 @@ async function main() {
 	await writeRulesToClineDir(srcPath, clineRulesDestPath); // Overwrite with base rules
 	const localRulesSrcPathForCline = path.join(outputPath, "local-ai-rules");
 	await appendRulesToClineDir(localRulesSrcPathForCline, clineRulesDestPath); // Append local rules
+
+	// --- Generate Claude Code memory files (.claude/rules/*.md and example) ---
+	const claudeRulesDestPath = path.join(outputPath, CLAUDE_RULES_DIR);
+	const claudeLocalDestPath = path.join(outputPath, CLAUDE_LOCAL_DIR);
+	const localRulesSrcPathForClaude = path.join(outputPath, "local-ai-rules");
+
+	await copyRulesToClaudeRulesDir(srcPath, claudeRulesDestPath); // Copy base rules
+	await copyLocalRulesToClaudeLocalDir(
+		localRulesSrcPathForClaude,
+		claudeLocalDestPath,
+	); // Copy local rules
+	await writeClaudeExampleMemory(
+		outputPath,
+		srcPath,
+		localRulesSrcPathForClaude,
+	); // Generate CLAUDE.example.md
 
 	// --- Load content from ORIGINAL source .md files for copilot-instructions.md ---
 	// Read directly from the source paths (.md only).

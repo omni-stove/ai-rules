@@ -19,6 +19,7 @@ Thumbs.db
 .roo
 .cursor
 .roomodes
+.claude
 
 # 出力ファイル
 dist/

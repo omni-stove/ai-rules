@@ -66,7 +66,10 @@ Add the following to .gitignore
 .cursorrules
 .ai-rules-version.json
 .github/copilot-instructions.md
+.claude
 ```
+
+**Note for Claude Code users**: Copy `.claude/CLAUDE.example.md` to your project root as `CLAUDE.md` and customize as needed.
 
 ### Node.js Version
 
@@ -91,7 +94,12 @@ Place the local-ai-rules directory at the root and add repository-specific rules
 ### index.js
 
 A script that converts [rules](./src/index.md) to various formats.
-Currently covers .clinerules and .cursorrules.
+Currently supports:
+- `.clinerules/*.md` (Cline)
+- `.cursor/rules/*.mdc` (Cursor)
+- `.roo/rules/*.md` (Roo)
+- `.claude/rules/*.md` and `CLAUDE.md` (Claude Code)
+- `.github/copilot-instructions.md` (GitHub Copilot)
 
 ### src
 
