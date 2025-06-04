@@ -156,7 +156,7 @@ async function processAndWriteMdcFiles(srcDir, destCursorDir) {
 		);
 
 		if (entry.isDirectory()) {
-			// Recursively process subdirectories (like ai-docs)
+			// Recursively process subdirectories
 			await processAndWriteMdcFiles(srcPath, destMdcPath);
 		} else if (entry.isFile() && entry.name.endsWith(".md")) {
 			const content = await fs.readFile(srcPath, "utf8");
@@ -650,65 +650,6 @@ async function main() {
 	);
 	if (baseRuleContent !== null) {
 		allRuleContentsForMerging.push(baseRuleContent);
-	}
-
-	// Load ai-docs rules (src/ai-docs/*.md)
-	const aiDocsPath = path.join(srcPath, "ai-docs");
-	const configFilePath = path.join(outputPath, ".ai-rules-config.json");
-	let docsToLoadNames = []; // Store just the base names (e.g., 'react')
-
-	// Determine which ai-docs to load (similar logic as before, but only .md)
-	if (nodeFs.existsSync(configFilePath)) {
-		const configContent = await fs.readFile(configFilePath, "utf8");
-		const config = JSON.parse(configContent);
-		if (config && Array.isArray(config.docs)) {
-			docsToLoadNames = config.docs;
-			console.log(
-				`⚙️ Using docs specified in config: ${docsToLoadNames.join(", ")}`,
-			);
-		} else {
-			console.log(
-				`⚙️ Config file found, but "docs" array is missing or invalid. Loading all docs.`,
-			);
-			if (nodeFs.existsSync(aiDocsPath)) {
-				docsToLoadNames = (await fs.readdir(aiDocsPath))
-					.filter((file) => file.endsWith(".md"))
-					.map((file) => file.replace(/\.md$/, ""));
-			} else {
-				console.warn(
-					`⚠️ ai-docs directory not found at ${aiDocsPath}. Cannot load all docs.`,
-				);
-			}
-		}
-	} else {
-		console.log(
-			`⚙️ Config file not found at ${configFilePath}. Loading all docs.`,
-		);
-		if (nodeFs.existsSync(aiDocsPath)) {
-			docsToLoadNames = (await fs.readdir(aiDocsPath))
-				.filter((file) => file.endsWith(".md"))
-				.map((file) => file.replace(/\.md$/, ""));
-		} else {
-			console.warn(
-				`⚠️ ai-docs directory not found at ${aiDocsPath}. Cannot load all docs.`,
-			);
-		}
-	}
-
-	// Read content of selected ai-docs files
-	if (nodeFs.existsSync(aiDocsPath)) {
-		for (const docName of docsToLoadNames) {
-			const content = await readOriginalRuleContent(
-				path.join(aiDocsPath, `${docName}.md`),
-			);
-			if (content !== null) {
-				allRuleContentsForMerging.push(content);
-			}
-		}
-	} else if (docsToLoadNames.length > 0) {
-		console.warn(
-			`⚠️ ai-docs directory not found at ${aiDocsPath}, but specific docs were requested.`,
-		);
 	}
 
 	// Load local-ai-rules (local-ai-rules/*.md from output path)
