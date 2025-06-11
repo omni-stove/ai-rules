@@ -67,9 +67,43 @@ Add the following to .gitignore
 .ai-rules-version.json
 .github/copilot-instructions.md
 .claude
+CLAUDE.md
 ```
 
-**Note for Claude Code users**: Copy `.claude/CLAUDE.example.md` to your project root as `CLAUDE.md` and customize as needed.
+**Note for Claude Code users**: 
+- Copy `.claude/CLAUDE.base.md` to your project root as `CLAUDE.base.md` for team-shared configuration
+- Copy `.claude/CLAUDE.example.md` to your project root as `CLAUDE.md` for personal configuration (this file is git-ignored)
+- The personal `CLAUDE.md` should import the team base configuration using `@CLAUDE.base.md`
+
+## Claude Code Setup Instructions
+
+### For Team Leads (Setting up team configuration)
+
+1. Run the CLI tool to generate configuration files:
+   ```bash
+   npm install @codynog/ai-rules
+   npx @codynog/ai-rules
+   ```
+
+2. Copy the generated base configuration:
+   ```bash
+   cp .claude/CLAUDE.base.md CLAUDE.base.md
+   ```
+
+3. Customize `CLAUDE.base.md` for your team's needs and commit it to the repository.
+
+### For Team Members (Setting up personal configuration)
+
+1. Ensure the repository has `CLAUDE.base.md` in the project root
+
+2. Create your personal configuration:
+   ```bash
+   cp .claude/CLAUDE.example.md CLAUDE.md
+   ```
+
+3. Customize `CLAUDE.md` with your personal preferences. This file is git-ignored and won't be shared.
+
+4. The personal `CLAUDE.md` automatically imports team settings via `@CLAUDE.base.md`
 
 ### Node.js Version
 

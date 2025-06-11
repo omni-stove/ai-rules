@@ -9,7 +9,7 @@ alwaysApply: false
 - Use TypeScript
 - Use `type` instead of `interface`
 - Use `const` instead of `let`
-- Prefer functional syntax; use class syntax only for existing implementations or when specifically instructed.
+- Never use class syntax.
 - Prefer specific types over `any`.
 - Prefer named imports over default imports.
 - Resolve import issues via formatting upon task completion.

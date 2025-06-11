@@ -21,6 +21,9 @@ Thumbs.db
 .roomodes
 .claude
 
+# 個人設定ファイル（Claude Code）
+CLAUDE.md
+
 # 出力ファイル
 dist/
 
