@@ -694,7 +694,7 @@ async function main() {
 	const claudeLocalDestPath = path.join(outputPath, CLAUDE_LOCAL_DIR);
 	const claudePersonasDestPath = path.join(outputPath, CLAUDE_PERSONAS_DIR);
 	const localRulesSrcPathForClaude = path.join(outputPath, "local-ai-rules");
-	const personasSrcPath = path.join(outputPath, "personas");
+	const personasSrcPath = path.join(srcPath, "personas");
 
 	await copyRulesToClaudeRulesDir(srcPath, claudeRulesDestPath); // Copy base rules
 	await copyLocalRulesToClaudeLocalDir(
