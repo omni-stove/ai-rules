@@ -22,7 +22,7 @@ Thumbs.db
 .claude
 
 # 個人設定ファイル（Claude Code）
-CLAUDE.md
+CLAUDE.personal.md
 
 # 出力ファイル
 dist/

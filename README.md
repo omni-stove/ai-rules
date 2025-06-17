@@ -67,13 +67,13 @@ Add the following to .gitignore
 .ai-rules-version.json
 .github/copilot-instructions.md
 .claude
-CLAUDE.md
+CLAUDE.personal.md
 ```
 
 **Note for Claude Code users**: 
-- Copy `.claude/CLAUDE.base.md` to your project root as `CLAUDE.base.md` for team-shared configuration
-- Copy `.claude/CLAUDE.example.md` to your project root as `CLAUDE.md` for personal configuration (this file is git-ignored)
-- The personal `CLAUDE.md` should import the team base configuration using `@CLAUDE.base.md`
+- Copy `.claude/CLAUDE.example.md` to your project root as `CLAUDE.md` for your main configuration
+- Copy `.claude/CLAUDE.personal.md` to your project root as `CLAUDE.personal.md` for personal settings (this file is git-ignored)
+- The main `CLAUDE.md` should import personal configuration using `@CLAUDE.personal.md`
 
 ## Claude Code Setup Instructions
 
@@ -85,25 +85,25 @@ CLAUDE.md
    npx @codynog/ai-rules
    ```
 
-2. Copy the generated base configuration:
-   ```bash
-   cp .claude/CLAUDE.base.md CLAUDE.base.md
-   ```
-
-3. Customize `CLAUDE.base.md` for your team's needs and commit it to the repository.
-
-### For Team Members (Setting up personal configuration)
-
-1. Ensure the repository has `CLAUDE.base.md` in the project root
-
-2. Create your personal configuration:
+2. Copy the generated main configuration:
    ```bash
    cp .claude/CLAUDE.example.md CLAUDE.md
    ```
 
-3. Customize `CLAUDE.md` with your personal preferences. This file is git-ignored and won't be shared.
+3. Customize `CLAUDE.md` for your team's needs and commit it to the repository.
 
-4. The personal `CLAUDE.md` automatically imports team settings via `@CLAUDE.base.md`
+### For Team Members (Setting up personal configuration)
+
+1. Ensure the repository has `CLAUDE.md` in the project root
+
+2. Create your personal configuration:
+   ```bash
+   cp .claude/CLAUDE.personal.md CLAUDE.personal.md
+   ```
+
+3. Customize `CLAUDE.personal.md` with your personal preferences (personas, personal settings, etc.). This file is git-ignored and won't be shared.
+
+4. The main `CLAUDE.md` automatically imports personal settings via `@CLAUDE.personal.md`
 
 ### Node.js Version
 
@@ -132,7 +132,7 @@ Currently supports:
 - `.clinerules/*.md` (Cline)
 - `.cursor/rules/*.mdc` (Cursor)
 - `.roo/rules/*.md` (Roo)
-- `.claude/rules/*.md` and `CLAUDE.md` (Claude Code)
+- `.claude/rules/*.md`, `CLAUDE.example.md`, and `CLAUDE.personal.md` (Claude Code)
 - `.github/copilot-instructions.md` (GitHub Copilot)
 
 ### src

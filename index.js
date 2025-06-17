@@ -478,24 +478,32 @@ async function writeClaudeExampleMemory(outputPath, srcPath, localRulesPath, per
 		"CLAUDE.base.md",
 	);
 
-	// Generate team base example content (current example.md content)
-	const baseContentLines = [];
-
-	// Add header and instructions for base example
-	baseContentLines.push("# Claude Code Memory Base (Team Shared)");
-	baseContentLines.push("");
-	baseContentLines.push(
-		"This file contains team-shared configuration for Claude Code.",
+	// Generate CLAUDE.personal.md (personal configuration example)
+	const claudePersonalPath = path.join(
+		outputPath,
+		".claude",
+		"CLAUDE.personal.md",
 	);
-	baseContentLines.push("Copy this as `CLAUDE.base.md` and customize for your team.");
-	baseContentLines.push("Uncomment the rules you want to use for your project.");
-	baseContentLines.push("");
 
-	// Add base rule import to team base example
-	baseContentLines.push("# AI Rules for this project");
-	baseContentLines.push("");
-	baseContentLines.push("See @.claude/rules/index.md for base rules.");
-	baseContentLines.push("");
+	// Generate example content (what was in base)
+	const exampleContentLines = [];
+
+	// Add header and instructions for example
+	exampleContentLines.push("# Claude Code Memory");
+	exampleContentLines.push("");
+	exampleContentLines.push(
+		"Copy this file to your project root as `CLAUDE.md` and customize as needed.",
+	);
+	exampleContentLines.push("");
+	exampleContentLines.push("# Personal Configuration");
+	exampleContentLines.push("@CLAUDE.personal.md");
+	exampleContentLines.push("");
+
+	// Add base rule import
+	exampleContentLines.push("# AI Rules for this project");
+	exampleContentLines.push("");
+	exampleContentLines.push("See @.claude/rules/index.md for base rules.");
+	exampleContentLines.push("");
 
 	// Generate personal example content (simple with base import)
 	const personalContentLines = [];
@@ -515,7 +523,7 @@ async function writeClaudeExampleMemory(outputPath, srcPath, localRulesPath, per
 	personalContentLines.push("@CLAUDE.base.md");
 	personalContentLines.push("");
 
-	// Add technology-specific rule imports to team base example
+	// Add technology-specific rule imports to example
 	if (nodeFs.existsSync(srcPath)) {
 		const srcEntries = await fs.readdir(srcPath, { withFileTypes: true });
 		const techRules = srcEntries
@@ -528,15 +536,15 @@ async function writeClaudeExampleMemory(outputPath, srcPath, localRulesPath, per
 			.map((entry) => entry.name);
 
 		if (techRules.length > 0) {
-			baseContentLines.push("# Technology-specific rules (uncomment as needed)");
+			exampleContentLines.push("# Technology-specific rules");
 			for (const techRule of techRules) {
-				baseContentLines.push(`# @.claude/rules/${techRule}`);
+				exampleContentLines.push(`@.claude/rules/${techRule}`);
 			}
-			baseContentLines.push("");
+			exampleContentLines.push("");
 		}
 	}
 
-	// Add local rule imports to team base example
+	// Add local rule imports to example
 	if (nodeFs.existsSync(localRulesPath)) {
 		const localEntries = await fs.readdir(localRulesPath, {
 			withFileTypes: true,
@@ -546,15 +554,24 @@ async function writeClaudeExampleMemory(outputPath, srcPath, localRulesPath, per
 			.map((entry) => entry.name);
 
 		if (localRules.length > 0) {
-			baseContentLines.push("# Local project rules (uncomment as needed)");
+			exampleContentLines.push("# Local project rules");
 			for (const localRule of localRules) {
-				baseContentLines.push(`# @.claude/local/${localRule}`);
+				exampleContentLines.push(`@.claude/local/${localRule}`);
 			}
-			baseContentLines.push("");
+			exampleContentLines.push("");
 		}
 	}
 
-	// Add persona imports to personal example instead of team base
+	// Generate CLAUDE.personal.md content (separate personal config example)
+	const personalConfigContentLines = [];
+	personalConfigContentLines.push("# Claude Code Memory Personal Configuration");
+	personalConfigContentLines.push("");
+	personalConfigContentLines.push("");
+	personalConfigContentLines.push("# Personal Preferences");
+	personalConfigContentLines.push("# Add your personal coding preferences and settings here");
+	personalConfigContentLines.push("");
+
+	// Add persona imports to personal config example
 	if (nodeFs.existsSync(personasPath)) {
 		const personaEntries = await fs.readdir(personasPath, {
 			withFileTypes: true,
@@ -564,25 +581,30 @@ async function writeClaudeExampleMemory(outputPath, srcPath, localRulesPath, per
 			.map((entry) => entry.name);
 
 		if (personas.length > 0) {
-			personalContentLines.push("# Persona settings (uncomment as needed)");
+			personalConfigContentLines.push("# Persona settings");
 			for (const persona of personas) {
-				personalContentLines.push(`# @.claude/personas/${persona}`);
+				personalConfigContentLines.push(`@.claude/personas/${persona}`);
 			}
 		}
 	}
 
-	// Write both files
-	const personalFinalContent = personalContentLines.join("\n");
-	const baseFinalContent = baseContentLines.join("\n");
+	// Update personal example content to import CLAUDE.personal.md
+	personalContentLines.push("# Persona settings");
+	personalContentLines.push("@CLAUDE.personal.md");
+	personalContentLines.push("");
+
+	// Write example and personal files (no more base file)
+	const exampleFinalContent = exampleContentLines.join("\n");
+	const personalConfigFinalContent = personalConfigContentLines.join("\n");
 	
-	await fs.writeFile(claudeExamplePath, personalFinalContent, "utf8");
-	await fs.writeFile(claudeBasePath, baseFinalContent, "utf8");
+	await fs.writeFile(claudeExamplePath, exampleFinalContent, "utf8");
+	await fs.writeFile(claudePersonalPath, personalConfigFinalContent, "utf8");
 
 	console.log(
-		`✅ Created Claude personal example: ${path.relative(process.cwd(), claudeExamplePath)}`,
+		`✅ Created Claude example: ${path.relative(process.cwd(), claudeExamplePath)}`,
 	);
 	console.log(
-		`✅ Created Claude base example: ${path.relative(process.cwd(), claudeBasePath)}`,
+		`✅ Created Claude personal config example: ${path.relative(process.cwd(), claudePersonalPath)}`,
 	);
 }
 

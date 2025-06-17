@@ -12,4 +12,5 @@ alwaysApply: false
 - Never use class syntax.
 - Prefer specific types over `any`.
 - Prefer named imports over default imports.
+- Prefer `if` over `switch`
 - Resolve import issues via formatting upon task completion.
