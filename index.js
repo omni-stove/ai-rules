@@ -16,6 +16,7 @@ const CLINE_RULES_DIR = ".clinerules";
 const CLAUDE_RULES_DIR = ".claude/rules";
 const CLAUDE_LOCAL_DIR = ".claude/local";
 const CLAUDE_PERSONAS_DIR = ".claude/personas";
+const CLAUDE_COMMANDS_DIR = ".claude/commands";
 const CLAUDE_PROJECT_MEMORY = "CLAUDE.md";
 
 // Octokit and fetch will be imported dynamically
@@ -383,10 +384,10 @@ async function copyRulesToClaudeRulesDir(srcDir, destClaudeRulesDir) {
 	const entries = await fs.readdir(srcDir, { withFileTypes: true });
 
 	for (const entry of entries) {
-		// Skip the 'modes' directory
-		if (entry.isDirectory() && entry.name === "modes") {
+		// Skip the 'modes', 'commands', and 'personas' directories
+		if (entry.isDirectory() && (entry.name === "modes" || entry.name === "commands" || entry.name === "personas")) {
 			console.log(
-				`ℹ️ Skipping 'modes' directory during Claude rule processing in: ${srcDir}`,
+				`ℹ️ Skipping '${entry.name}' directory during Claude rule processing in: ${srcDir}`,
 			);
 			continue;
 		}
@@ -457,6 +458,37 @@ async function copyPersonasToClaudePersonasDir(
 			await fs.copyFile(srcPath, destPath);
 			console.log(
 				`✅ Copied persona to Claude personas: ${path.relative(process.cwd(), destPath)}`,
+			);
+		}
+	}
+}
+
+// --- Helper function to copy command files to the Claude commands directory ---
+async function copyCommandsToClaudeCommandsDir(
+	commandsSrcDir,
+	destClaudeCommandsDir,
+) {
+	if (!nodeFs.existsSync(commandsSrcDir)) {
+		console.log(
+			`ℹ️ No commands directory found at ${commandsSrcDir}. Skipping Claude commands.`,
+		);
+		return;
+	}
+
+	await fs.mkdir(destClaudeCommandsDir, { recursive: true });
+	const entries = await fs.readdir(commandsSrcDir, { withFileTypes: true });
+
+	for (const entry of entries) {
+		const srcPath = path.join(commandsSrcDir, entry.name);
+		const destPath = path.join(destClaudeCommandsDir, entry.name);
+
+		if (entry.isDirectory()) {
+			// Recursively copy subdirectories
+			await copyCommandsToClaudeCommandsDir(srcPath, destPath);
+		} else if (entry.isFile() && entry.name.endsWith(".md")) {
+			await fs.copyFile(srcPath, destPath);
+			console.log(
+				`✅ Copied command to Claude commands: ${path.relative(process.cwd(), destPath)}`,
 			);
 		}
 	}
@@ -715,8 +747,10 @@ async function main() {
 	const claudeRulesDestPath = path.join(outputPath, CLAUDE_RULES_DIR);
 	const claudeLocalDestPath = path.join(outputPath, CLAUDE_LOCAL_DIR);
 	const claudePersonasDestPath = path.join(outputPath, CLAUDE_PERSONAS_DIR);
+	const claudeCommandsDestPath = path.join(outputPath, CLAUDE_COMMANDS_DIR);
 	const localRulesSrcPathForClaude = path.join(outputPath, "local-ai-rules");
 	const personasSrcPath = path.join(srcPath, "personas");
+	const commandsSrcPath = path.join(srcPath, "commands");
 
 	await copyRulesToClaudeRulesDir(srcPath, claudeRulesDestPath); // Copy base rules
 	await copyLocalRulesToClaudeLocalDir(
@@ -727,6 +761,10 @@ async function main() {
 		personasSrcPath,
 		claudePersonasDestPath,
 	); // Copy personas
+	await copyCommandsToClaudeCommandsDir(
+		commandsSrcPath,
+		claudeCommandsDestPath,
+	); // Copy commands
 	await writeClaudeExampleMemory(
 		outputPath,
 		srcPath,
