@@ -1,27 +1,27 @@
-# 作業ログ
+# Work Log
 
-完了した作業の要点を記録します。
+Record key points of completed work.
 
-## 指示
+## Instructions
 
-作業完了後に以下形式でログを生成：
+Generate a log in the following format after work completion:
 
 ```markdown
-## 作業ログ - [日時]
+## Work Log - [datetime]
 
-### 依頼内容
-[ユーザーからの依頼を要約]
+### Request
+[Summary of user request]
 
-### 実行した作業
-- [主な作業1]
-- [主な作業2]
+### Work Performed
+- [Main task 1]
+- [Main task 2]
 
-### 変更ファイル
-- `file1` - [変更内容]
-- `file2` - [変更内容]
+### Files Changed
+- `file1` - [change description]
+- `file2` - [change description]
 
-### 注意点・次回対応
-- [重要なポイントや残課題があれば]
+### Notes/Follow-up
+- [Important points or remaining tasks if any]
 ```
 
-引数: $ARGUMENTS
+Arguments: $ARGUMENTS
