@@ -6,6 +6,10 @@ alwaysApply: false
 
 # React Native
 
+## Base React Rules
+
+See [React rules](./react.md) for general React best practices that also apply to React Native.
+
 ## Core Rules
 
 - Use functional components with TypeScript
