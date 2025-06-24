@@ -22,3 +22,7 @@ alwaysApply: true
 ## coding
 
 - Use comments sparingly.
+
+## GitHub Investigation
+
+- Use deepwiki MCP tools for GitHub URL investigations.
