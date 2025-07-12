@@ -11,7 +11,10 @@
 		"hono",
 		"nextjs",
 		"roomodes",
-		"deepwiki"
+		"deepwiki",
+		"textlint",
+		"roorules",
+		"OOUI"
 	],
 	"ignoreWords": [],
 	"ignorePaths": ["dist", "node_modules", "*.zip", ".gitignore"]
