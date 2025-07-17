@@ -23,6 +23,8 @@ alwaysApply: true
 
 - Use comments sparingly.
 
-## GitHub Investigation
+## MCP Servers
 
 - Use deepwiki MCP tools for GitHub URL investigations.
+- Use textlint for text/markdown/HTML linting
+- Use notion for Notion workspace management
