@@ -2,7 +2,7 @@
 
 A repository that manages the common foundation for AI rules.
 Also publishes CLI tool scripts to Github Packages.
-Each repository can obtain the latest version of common rules by executing `@codynog/ai-rules` (Node.js).
+Each repository can obtain the latest version of common rules by executing `@omni-stove/ai-rules` (Node.js).
 
 ## Automatic Release
 
@@ -30,7 +30,7 @@ If you don't need to adjust the script itself, you can simply edit the documents
 2. Copy the `.npmrc.example` file to `.npmrc` and set your GitHub Personal Access Token
 
    ```plaintext
-   @codynog:registry=https://npm.pkg.github.com
+   @omni-stove:registry=https://npm.pkg.github.com
    //npm.pkg.github.com/:_authToken=your_github_personal_access_token
    ```
 
@@ -81,8 +81,8 @@ CLAUDE.personal.md
 
 1. Run the CLI tool to generate configuration files:
    ```bash
-   npm install @codynog/ai-rules
-   npx @codynog/ai-rules
+   npm install @omni-stove/ai-rules
+   npx @omni-stove/ai-rules
    ```
 
 2. Copy the generated main configuration:
@@ -110,13 +110,13 @@ CLAUDE.personal.md
 Install the package:
 
 ```bash
-npm install @codynog/ai-rules
+npm install @omni-stove/ai-rules
 ```
 
 Incorporating CLI execution into postinstall will automatically download the latest rules:
 
 ```json
-"postinstall": "@codynog/ai-rules"
+"postinstall": "@omni-stove/ai-rules"
 ```
 
 Place the local-ai-rules directory at the root and add repository-specific rules that are not common rules.

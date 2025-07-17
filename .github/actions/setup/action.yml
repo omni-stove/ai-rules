@@ -9,7 +9,7 @@ runs:
       with:
         node-version-file: ".node-version"
         registry-url: 'https://npm.pkg.github.com'
-        scope: '@codynog'
+        scope: '@omni-stove'
 
     - name: Get npm cache directory
       id: npm-cache-dir

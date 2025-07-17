@@ -12,7 +12,7 @@
 		"url": "git+https://github.com/codynog/ai-rules.git"
 	},
 	"bin": {
-		"@codynog/ai-rules": "./index.js"
+		"@omni-stove/ai-rules": "./index.js"
 	},
 	"license": "ISC",
 	"author": "",
