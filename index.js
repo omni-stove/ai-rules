@@ -7,7 +7,7 @@ const AdmZip = require("adm-zip");
 require("dotenv").config();
 
 // GitHub repository information
-const OWNER = "codynog";
+const OWNER = "omni-stove";
 const REPO = "ai-rules";
 const VERSION_FILE = ".ai-rules-version.json";
 const CURSOR_RULES_DIR = ".cursor/rules";

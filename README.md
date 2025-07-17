@@ -1,4 +1,4 @@
-# cody-ai-rules
+# ai-rules
 
 A repository that manages the common foundation for AI rules.
 Also publishes CLI tool scripts to Github Packages.

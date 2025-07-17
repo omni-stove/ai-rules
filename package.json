@@ -1,15 +1,14 @@
 {
-	"name": "ai-rules",
+	"name": "@omni-stove/ai-rules",
 	"version": "1.0.0",
-	"private": true,
 	"description": "",
-	"homepage": "https://github.com/codynog/ai-rules#readme",
+	"homepage": "https://github.com/omni-stove/ai-rules#readme",
 	"bugs": {
-		"url": "https://github.com/codynog/ai-rules/issues"
+		"url": "https://github.com/omni-stove/ai-rules/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/codynog/ai-rules.git"
+		"url": "git+https://github.com/omni-stove/ai-rules.git"
 	},
 	"bin": {
 		"@omni-stove/ai-rules": "./index.js"

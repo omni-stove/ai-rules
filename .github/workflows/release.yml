@@ -49,10 +49,6 @@ jobs:
 
       - name: Update package.json
         run: |
-          # Update package name to @omni-stove/ai-rules
-          jq '.name = "@omni-stove/ai-rules"' package.json > package.json.tmp
-          mv package.json.tmp package.json
-          
           # Update version
           if jq -e '.version' package.json > /dev/null 2>&1; then
             # Update existing version
