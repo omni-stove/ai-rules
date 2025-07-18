@@ -10,6 +10,10 @@
 		"type": "git",
 		"url": "git+https://github.com/omni-stove/ai-rules.git"
 	},
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com/",
+		"access": "public"
+	},
 	"bin": {
 		"@omni-stove/ai-rules": "./index.js"
 	},
